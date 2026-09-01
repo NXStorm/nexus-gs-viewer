@@ -128,11 +128,11 @@ function addRecent(filePath) {
 // ---------------------------------------------------------------------------
 ipcMain.handle('dialog:pickFile', async (_e, opts) => {
   const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-    title: opts?.title || 'Ouvrir un fichier splat',
+    title: opts?.title || 'Open a splat file',
     properties: ['openFile'],
     filters: opts?.filters || [
-      { name: 'Fichiers splat', extensions: ['ply', 'spz', 'splat', 'ksplat'] },
-      { name: 'Tous les fichiers', extensions: ['*'] }
+      { name: 'Splat files', extensions: ['ply', 'spz', 'splat', 'ksplat'] },
+      { name: 'All files', extensions: ['*'] }
     ]
   })
   return canceled || filePaths.length === 0 ? null : filePaths[0]
@@ -215,9 +215,9 @@ ipcMain.handle('file:closeWrite', (_e, id) => {
 ipcMain.handle('recents:get', () => loadRecents())
 
 // Dialogue « Enregistrer sous » générique (captures, exports).
-ipcMain.handle('file:saveAs', async (_e, { defaultName, filters }) => {
+ipcMain.handle('file:saveAs', async (_e, { title, defaultName, filters }) => {
   const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-    title: 'Enregistrer',
+    title: title || 'Save',
     defaultPath: defaultName,
     filters
   })

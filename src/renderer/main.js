@@ -166,7 +166,7 @@ canvas.addEventListener('pointerup', (e) => {
       renderKeys()
       rebuildPath()
       updatePlayhead()
-      showToast(`Clé ${key.t.toFixed(2)} s`)
+      showToast(`${t('Key')} ${key.t.toFixed(2)} s`)
       return
     }
   }
@@ -232,6 +232,205 @@ function computeSceneBounds() {
 // Éléments d'UI
 // ---------------------------------------------------------------------------
 const $ = (id) => document.getElementById(id)
+
+// ---------------------------------------------------------------------------
+// i18n — English by default, French via the FR/EN toolbar button.
+// Static DOM: [data-i18n] texts and every [title] attribute are swapped from
+// their English source using the dictionary below. Dynamic strings go through
+// t('English source') at call time.
+// ---------------------------------------------------------------------------
+let lang = localStorage.getItem('nex-lang') || 'en'
+
+const I18N_FR = {
+  // Toolbar
+  'Open…': 'Ouvrir…', Frame: 'Recadrer', Flip: 'Retourner', Grid: 'Grille',
+  Move: 'Déplacer', Rotate: 'Pivoter', Scale: 'Échelle', Edit: 'Édition',
+  Export: 'Exporter', BG: 'Fond',
+  'Frame the view (F)': 'Recadrer la vue (F)',
+  'Flip upside down (X)': 'Retourner haut/bas (X)',
+  'Ground grid + axes (V)': 'Grille de sol + axes (V)',
+  'Transform the object': "Transformer l'objet",
+  'Move (W)': 'Déplacer (W)', 'Rotate (E)': 'Pivoter (E)', 'Scale (R)': 'Échelle (R)',
+  'Edit / cleanup (C) — boxes, spheres, cylinders and planes in Keep or Erase mode; .spz/.ply export writes the cleaned scene':
+    "Édition / nettoyage (C) — boîtes, sphères, cylindres et plans en mode Garder ou Effacer ; l'export .spz/.ply écrit la scène nettoyée",
+  'PNG/JPG screenshot (P) — drops a 3D camera at this angle':
+    "Capture d'écran PNG/JPG (P) — pose une caméra 3D à cet angle",
+  'Camera animation timeline (T)': "Timeline d'animation caméra (T)",
+  'Export as compressed .spz or .ply': 'Exporter en .spz compressé ou .ply',
+  'Show/hide shortcuts (H)': 'Afficher/masquer les raccourcis (H)',
+  'Background color': 'Couleur de fond',
+  // Layers & edit panel
+  Layers: 'Calques', 'Edit — cleanup': 'Édition — nettoyage',
+  '+ Box': '+ Boîte', '+ Sphere': '+ Sphère', '+ Cyl.': '+ Cyl.', '+ Plane': '+ Plan',
+  'Add a box': 'Ajouter une boîte', 'Add a sphere': 'Ajouter une sphère',
+  'Add a cylinder': 'Ajouter un cylindre',
+  'Add a cutting plane (arrow = erased side in Erase mode)':
+    'Ajouter un plan de coupe (flèche = côté effacé en mode Effacer)',
+  '🖌 Erase': '🖌 Gomme', '🖌 Select': '🖌 Sélection',
+  'Eraser brush (B) — drag to erase, wheel: radius':
+    'Pinceau Gomme (B) — glisser pour effacer, molette : rayon',
+  'Selection brush (B×2) — drag to select (blue highlight), wheel: radius':
+    'Pinceau Sélection (B×2) — glisser pour sélectionner (surligné bleu), molette : rayon',
+  Extract: 'Extraire', Duplicate: 'Dupliquer', Delete: 'Supprimer',
+  'Cut the selected splats into a new layer (movable with the gizmo)':
+    'Coupe les splats sélectionnés vers un nouveau calque (déplaçable au gizmo)',
+  'Copy the selected splats into a new layer':
+    'Copie les splats sélectionnés vers un nouveau calque',
+  'Delete the selected splats': 'Supprime les splats sélectionnés',
+  'Soft edge': 'Bord doux',
+  'Soft edge: progressive falloff at shape borders (visible in the viewport and playblasts; .spz/.ply export stays a hard cut)':
+    "Bord doux : fondu progressif au bord des formes (visible au viewport et dans les playblasts ; l'export .spz/.ply reste une coupe nette)",
+  'Apply edits': 'Appliquer les édits',
+  'Permanently bakes the edits into the layers: masked splats are deleted, shapes are consumed (undoable with Ctrl+Z). Spherical harmonics above order 0 are not preserved — export afterwards to save the result.':
+    'Grave définitivement les édits dans les calques : les splats masqués sont supprimés, les formes consommées (annulable Ctrl+Z). Harmoniques d’ordre > 0 non conservées — exporte ensuite pour sauvegarder.',
+  // Shortcuts panel
+  Orbit: 'Orbite', 'Left click': 'Clic gauche', 'Zoom (to cursor)': 'Zoom (vers curseur)',
+  Wheel: 'Molette', 'Pan the view': 'Déplacer la vue', 'Middle click': 'Clic milieu',
+  'Fly mode': 'Vol libre', 'Hold right click': 'Clic droit maintenu', Fly: 'Vol',
+  'Forward / strafe': 'Avancer / latéral', 'W A S D': 'Z Q S D', 'Up / down': 'Monter / descendre',
+  Q: 'A', Speed: 'Vitesse', Object: 'Objet', 'Hide the gizmo': 'Masquer le gizmo',
+  General: 'Général', Open: 'Ouvrir', 'PNG/JPG capture': 'Capture PNG/JPG',
+  'Ground grid': 'Grille de sol', 'Edit / cleanup': 'Édition / nettoyage',
+  'Erase/select brush': 'Pinceau gomme/sélection', 'Undo / Redo': 'Annuler / Rétablir',
+  'This panel': 'Ce panneau', Language: 'Langue', 'Placed cameras': 'Caméras posées',
+  'Back to that angle': "Revenir à l'angle", 'Click camera': 'Clic caméra',
+  'Set a key': 'Poser une clé', 'Play / pause': 'Lecture / pause', Space: 'Espace',
+  'Delete the key': 'Supprimer la clé', Del: 'Suppr', 'Frame guides': 'Guides du cadre',
+  'Key easing': 'Amorti de la clé', Settings: 'Réglages',
+  // Timeline & settings
+  '◆ Key': '◆ Clé', 'Play / pause (Space)': 'Lecture / pause (Espace)',
+  'Back to start': 'Retour au début',
+  'Set a camera key at this time (K)': 'Poser une clé caméra à cet instant (K)',
+  'Animation and export settings (S)': "Réglages d'animation et d'export (S)",
+  'Import a Nuke .chan camera — one key per frame, Linear curve':
+    'Importer une caméra Nuke .chan — une clé par frame, courbe Linéaire',
+  Curve: 'Courbe', 'Smooth eased': 'Fluide amorti', Smooth: 'Fluide', Linear: 'Linéaire',
+  'Stop at keys': 'Pause sur clés',
+  'Animation curve — interpolation between keys':
+    "Courbe d'animation — interpolation entre les clés",
+  'Duration (s)': 'Durée (s)',
+  'Animation duration — existing keys are rescaled proportionally':
+    "Durée de l'animation — les clés existantes sont re-calées proportionnellement",
+  'Frame rate (fps)': 'Cadence (fps)', 'Frames per second': 'Images par seconde',
+  'Export format and resolution — the camera frame shows exactly what will be rendered':
+    "Format et résolution d'export — le cadre caméra montre exactement ce qui sera rendu",
+  'Square 1:1': 'Carré 1:1',
+  'No guides': 'Sans guides', Thirds: 'Tiers', 'Thirds + safe': 'Tiers + safe',
+  'Safe areas': 'Zones safe', 'Center cross': 'Croix centrale',
+  'Composition guides inside the camera frame (G)':
+    'Guides de composition dans le cadre caméra (G)',
+  'Burn-in: overlay timecode, shot name and frame counter on the export (reviews)':
+    "Burn-in : incruster timecode, nom et numéro de frame dans l'export (reviews)",
+  'Alpha PNG': 'PNG alpha',
+  'PNG sequence: transparent background (alpha channel), for compositing':
+    'Séquence PNG : fond transparent (canal alpha), pour le compositing',
+  'Export the camera view — MP4, PNG sequence or Nuke .chan camera (type chosen in the save dialog)':
+    "Exporter la vue caméra — MP4, séquence PNG ou caméra Nuke .chan (type choisi dans le dialogue d'enregistrement)",
+  // HUD / dropzone / overlays
+  'No file': 'Aucun fichier', 'GS Viewer — AI R&D': 'GS Viewer — R&D IA',
+  'Drop a splat file here': 'Glisse un fichier splat ici',
+  'Open a file': 'Ouvrir un fichier', 'Recent files': 'Fichiers récents',
+  'Loading…': 'Chargement…', 'Could not load the file': 'Impossible de charger le fichier',
+  Close: 'Fermer', 'Drop to open': 'Déposer pour ouvrir',
+  'Camera Perspective': 'Perspective Caméra',
+  // Dynamic strings
+  'fly · speed': 'vol · vitesse',
+  'Reading file…': 'Lecture du fichier…', Decoding: 'Décodage de', 'Decoding…': 'Décodage…',
+  'Exporting…': 'Export en cours…', 'Exporting MP4…': 'Export MP4…',
+  'Exporting PNG sequence…': 'Export séquence PNG…', '— Esc to cancel': '— Échap pour annuler',
+  'Applying edits…': 'Application des édits…',
+  'Deleting the selection…': 'Suppression de la sélection…',
+  'Extracting the selection…': 'Extraction de la sélection…',
+  Save: 'Enregistrer', 'Open a splat file': 'Ouvrir un fichier splat',
+  'Import a Nuke camera (.chan)': 'Importer une caméra Nuke (.chan)',
+  'Splat files': 'Fichiers splat', 'All files': 'Tous les fichiers',
+  'PNG image': 'Image PNG', 'JPEG image': 'Image JPEG', 'MP4 video': 'Vidéo MP4',
+  'PNG image sequence': "Séquence d'images PNG", 'Nuke camera (.chan)': 'Caméra Nuke (.chan)',
+  'Compressed SPZ': 'SPZ compressé', '3D Gaussian Splatting PLY': 'PLY 3D Gaussian Splatting',
+  'Screenshot saved —': 'Capture enregistrée —', 'Exported —': 'Exporté —',
+  'No visible layer to export': 'Aucun calque visible à exporter',
+  Layer: 'Calque', splats: 'splats', layers: 'calques', keys: 'clés', frames: 'frames',
+  'Set at least 2 camera keys (K) to play the animation':
+    "Pose au moins 2 clés caméra (K) pour lire l'animation",
+  'Set at least 2 camera keys (K) before exporting':
+    "Pose au moins 2 clés caméra (K) avant l'export",
+  'Camera key at': 'Clé caméra à', 'Guides:': 'Guides :', Key: 'Clé',
+  'easing on': 'amorti activé', 'easing off': 'amorti désactivé',
+  Undone: 'Annulé', Redone: 'Rétabli',
+  'Playblast exported —': 'Playblast exporté —', 'Sequence exported —': 'Séquence exportée —',
+  images: 'images', 'Nuke camera exported —': 'Caméra Nuke exportée —',
+  'focal': 'focale', 'Export cancelled': 'Export annulé',
+  'Could not read the .chan file': 'Lecture du fichier .chan impossible',
+  '.chan file invalid (at least 2 frames expected)':
+    'Fichier .chan invalide (au moins 2 frames attendues)',
+  'Camera imported —': 'Caméra importée —', 'Linear curve': 'courbe Linéaire',
+  'Scene restored —': 'Scène restaurée —',
+  'Edit — Keep/Erase per shape; export will write the cleaned scene':
+    "Édition — Garder/Effacer par forme ; l'export écrira la scène nettoyée",
+  'No Keep/Erase shape to apply (Selections have their own buttons)':
+    'Aucune forme Garder/Effacer à appliquer (les Sélections ont leurs propres boutons)',
+  'Edits applied —': 'Édits appliqués —', 'splats kept': 'splats conservés',
+  'export (.spz/.ply) to save': 'exporte (.spz/.ply) pour sauvegarder',
+  'No selection — use the Select brush (B) or switch a shape to Select mode':
+    'Aucune sélection — pinceau Sélection (B) ou passe une forme en mode Sélection',
+  'The selection contains no splats': 'La sélection ne contient aucun splat',
+  'Selection deleted —': 'Sélection supprimée —',
+  'Selection duplicated —': 'Sélection dupliquée —',
+  'Selection extracted —': 'Sélection extraite —',
+  '(move it with the gizmo)': '(déplace-la au gizmo)', Selection: 'Sélection',
+  'Shape duplicated —': 'Forme dupliquée —', copy: 'copie',
+  'No splats kept by the edit shapes': 'Aucun splat conservé par les formes d’édition',
+  'Source file missing for': 'Source introuvable pour',
+  '— reopen it from its location to export as SPZ.':
+    '— rouvre ce fichier depuis son emplacement pour l’exporter en SPZ.',
+  Box: 'Boîte', Sphere: 'Sphère', Cylinder: 'Cylindre', Plane: 'Plan', Brush: 'Pinceau',
+  Keep: 'Garder', Erase: 'Effacer', Select: 'Sélection',
+  'Eraser brush — drag: paint · wheel: radius · B/Esc: quit':
+    'Pinceau Gomme — glisser : peindre · molette : rayon · B/Échap : quitter',
+  'Selection brush — drag: paint · wheel: radius · B/Esc: quit':
+    'Pinceau Sélection — glisser : peindre · molette : rayon · B/Échap : quitter',
+  'Disable the shape': 'Désactiver la forme', 'Enable the shape': 'Activer la forme',
+  'Cycle mode: Keep → Erase → Select': 'Cycler le mode : Garder → Effacer → Sélection',
+  'Duplicate the shape (Ctrl+D)': 'Dupliquer la forme (Ctrl+D)',
+  'Delete the shape': 'Supprimer la forme',
+  '— double-click to rename': '— double-clic : renommer',
+  'Hide': 'Masquer', 'Show': 'Afficher', 'Delete the layer': 'Supprimer le calque',
+  'Layer opacity': 'Opacité du calque',
+  'click: go to key · drag: retime · double-click or A: easing · right-click: delete':
+    'clic : aller à la clé · glisser : décaler · double-clic ou A : amorti · clic droit : supprimer',
+  eased: 'amortie', 'Switch language / Changer de langue': 'Changer de langue / Switch language'
+}
+
+const t = (s) => (lang === 'fr' ? (I18N_FR[s] ?? s) : s)
+const nfmt = (n) => n.toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-US')
+
+function applyLanguage() {
+  document.documentElement.lang = lang
+  for (const el of document.querySelectorAll('[data-i18n]')) {
+    if (el.dataset.en === undefined) el.dataset.en = el.textContent.trim()
+    el.textContent = t(el.dataset.en)
+  }
+  for (const el of document.querySelectorAll('[title]')) {
+    if (el.dataset.enTitle === undefined) el.dataset.enTitle = el.title
+    el.title = t(el.dataset.enTitle)
+  }
+  $('drop-hint').innerHTML =
+    lang === 'fr'
+      ? '<b>Clic droit maintenu</b> : vol libre (ZQSD) · raccourcis sur le panneau de droite (<b>H</b>)'
+      : '<b>Hold right-click</b>: fly mode (WASD) · shortcuts on the right panel (<b>H</b>)'
+  $('btn-lang').textContent = lang === 'fr' ? 'EN' : 'FR'
+}
+
+$('btn-lang').addEventListener('click', () => {
+  lang = lang === 'fr' ? 'en' : 'fr'
+  localStorage.setItem('nex-lang', lang)
+  applyLanguage()
+  // Réapplique les textes générés dynamiquement.
+  refreshSceneUI()
+  renderEditList()
+  renderKeys()
+  if (!camframe.hidden) layoutCamframe()
+})
 const dropzone = $('dropzone')
 const loading = $('loading')
 const loadingText = $('loading-text')
@@ -323,6 +522,7 @@ window.addEventListener('keydown', (e) => {
   else if (k === 'v') toggleGrid()
   else if (k === 'c') toggleCrop()
   else if (k === 'b') cycleBrush()
+  else if (k === 'l') $('btn-lang').click()
   else if (k === 'escape' && brush.mode) setBrush(null)
   else if (k === 'w') setGizmoMode('translate')
   else if (k === 'e') setGizmoMode('rotate')
@@ -353,7 +553,7 @@ canvas.addEventListener('pointerdown', (e) => {
   fly.euler.setFromQuaternion(camera.quaternion)
   controls.enabled = false
   canvas.requestPointerLock()
-  hudSpeed.textContent = `vol · vitesse ${fly.speed.toPrecision(2)}`
+  hudSpeed.textContent = `${t('fly · speed')} ${fly.speed.toPrecision(2)}`
 })
 
 window.addEventListener('pointerup', (e) => {
@@ -400,7 +600,7 @@ canvas.addEventListener(
     e.preventDefault()
     e.stopImmediatePropagation()
     fly.speed = Math.min(Math.max(fly.speed * (e.deltaY < 0 ? 1.25 : 0.8), 0.001), 1000)
-    hudSpeed.textContent = `vol · vitesse ${fly.speed.toPrecision(2)}`
+    hudSpeed.textContent = `${t('fly · speed')} ${fly.speed.toPrecision(2)}`
   },
   { capture: true, passive: false }
 )
@@ -511,17 +711,17 @@ const crop = {
 let shapeSeq = 0
 
 const SHAPE_DEFS = {
-  box: { label: 'Boîte' },
-  sphere: { label: 'Sphère' },
-  cylinder: { label: 'Cylindre' },
-  plane: { label: 'Plan' },
-  stroke: { label: 'Pinceau' }
+  box: { label: 'Box' },
+  sphere: { label: 'Sphere' },
+  cylinder: { label: 'Cylinder' },
+  plane: { label: 'Plane' },
+  stroke: { label: 'Brush' }
 }
 // Trois modes par forme : Garder (masque l'extérieur), Effacer (gomme
 // l'intérieur), Sélection (surligne — base des opérations Extraire/Dupliquer/
 // Supprimer, sans effet sur le masquage ni l'export).
 const MODE_ORDER = ['keep', 'erase', 'select']
-const MODE_LABELS = { keep: 'Garder', erase: 'Effacer', select: 'Sélection' }
+const MODE_LABELS = { keep: 'Keep', erase: 'Erase', select: 'Select' }
 const MODE_COLORS = { keep: 0xffb454, erase: 0xff5c5c, select: 0x4da6ff }
 const SELECT_TINT = new THREE.Color(0.15, 0.45, 1.1) // ajout RGB de surlignage
 
@@ -620,7 +820,7 @@ function buildShape(type, mode = 'keep') {
     id,
     type,
     mode,
-    name: `${SHAPE_DEFS[type].label} ${id}`,
+    name: `${t(SHAPE_DEFS[type].label)} ${id}`,
     visible: true,
     group,
     sdf,
@@ -784,7 +984,7 @@ function toggleShapeVisible(shape) {
 
 function duplicateShape(src) {
   const shape = buildShape(src.type, src.mode)
-  shape.name = `${src.name} copie`
+  shape.name = `${src.name} ${t('copy')}`
   shape.visible = src.visible
   shape.group.visible = shape.visible
   shape.group.position.copy(src.group.position)
@@ -799,7 +999,7 @@ function duplicateShape(src) {
   selectShape(shape)
   pushUndo({ type: 'shape-add', shape })
   scheduleSceneSave()
-  showToast(`Forme dupliquée — ${shape.name}`)
+  showToast(`${t('Shape duplicated —')} ${shape.name}`)
   return shape
 }
 
@@ -812,7 +1012,7 @@ function renderEditList() {
     const eye = document.createElement('button')
     eye.className = 'l-eye'
     eye.textContent = s.visible ? '●' : '○'
-    eye.title = s.visible ? 'Désactiver la forme' : 'Activer la forme'
+    eye.title = t(s.visible ? 'Disable the shape' : 'Enable the shape')
     eye.addEventListener('click', (e) => {
       e.stopPropagation()
       toggleShapeVisible(s)
@@ -820,8 +1020,8 @@ function renderEditList() {
 
     const mode = document.createElement('button')
     mode.className = `e-mode mode-${s.mode}`
-    mode.textContent = MODE_LABELS[s.mode]
-    mode.title = 'Cycler le mode : Garder → Effacer → Sélection'
+    mode.textContent = t(MODE_LABELS[s.mode])
+    mode.title = t('Cycle mode: Keep → Erase → Select')
     mode.addEventListener('click', (e) => {
       e.stopPropagation()
       toggleShapeMode(s)
@@ -830,7 +1030,7 @@ function renderEditList() {
     const name = document.createElement('span')
     name.className = 'l-name'
     name.textContent = s.name
-    name.title = `${s.name} — double-clic : renommer`
+    name.title = `${s.name} ${t('— double-click to rename')}`
     name.addEventListener('dblclick', (e) => {
       e.stopPropagation()
       const input = document.createElement('input')
@@ -858,7 +1058,7 @@ function renderEditList() {
     const dup = document.createElement('button')
     dup.className = 'l-del'
     dup.textContent = '⧉'
-    dup.title = 'Dupliquer la forme (Ctrl+D)'
+    dup.title = t('Duplicate the shape (Ctrl+D)')
     dup.addEventListener('click', (e) => {
       e.stopPropagation()
       duplicateShape(s)
@@ -867,7 +1067,7 @@ function renderEditList() {
     const del = document.createElement('button')
     del.className = 'l-del'
     del.textContent = '✕'
-    del.title = 'Supprimer la forme'
+    del.title = t('Delete the shape')
     del.addEventListener('click', (e) => {
       e.stopPropagation()
       deleteShape(s)
@@ -891,7 +1091,7 @@ function toggleCrop() {
       rebuildEdits()
       selectShape(crop.selected ?? crop.shapes[0])
     }
-    showToast('Édition — Garder/Effacer par forme ; l’export écrira la scène nettoyée')
+    showToast(t('Edit — Keep/Erase per shape; export will write the cleaned scene'))
   } else {
     if (brush.mode) setBrush(null)
     gizmo.detach()
@@ -974,14 +1174,12 @@ function insideCrop(worldPos) {
 async function selectionOp(kind) {
   const selShapes = crop.shapes.filter((s) => s.mode === 'select' && s.visible)
   if (!selShapes.length) {
-    showToast('Aucune sélection — pinceau Sélection (B) ou passe une forme en mode Sélection')
+    showToast(t('No selection — use the Select brush (B) or switch a shape to Select mode'))
     return
   }
   const vis = visibleLayers()
   if (!vis.length) return
-  showLoading(
-    kind === 'delete' ? 'Suppression de la sélection…' : 'Extraction de la sélection…'
-  )
+  showLoading(t(kind === 'delete' ? 'Deleting the selection…' : 'Extracting the selection…'))
   await new Promise((r) => setTimeout(r, 30))
   try {
     crop.root.updateMatrixWorld(true)
@@ -1018,7 +1216,7 @@ async function selectionOp(kind) {
       if (cut) results.push({ layer, keptPacked })
     }
     if (count === 0) {
-      showToast('La sélection ne contient aucun splat')
+      showToast(t('The selection contains no splats'))
       return
     }
     const bakes = []
@@ -1047,7 +1245,7 @@ async function selectionOp(kind) {
       scene.add(nm)
       newLayer = {
         id: ++layerSeq,
-        name: `Sélection ${layerSeq}`,
+        name: `${t('Selection')} ${layerSeq}`,
         filePath: null,
         mesh: nm,
         visible: true,
@@ -1061,13 +1259,11 @@ async function selectionOp(kind) {
     computeSceneBounds()
     refreshSceneUI()
     scheduleSceneSave()
-    const n = count.toLocaleString('fr-FR')
+    const n = nfmt(count)
     showToast(
       kind === 'delete'
-        ? `Sélection supprimée — ${n} splats`
-        : kind === 'duplicate'
-          ? `Sélection dupliquée — ${n} splats → « ${newLayer.name} » (déplace-la au gizmo)`
-          : `Sélection extraite — ${n} splats → « ${newLayer.name} » (déplace-la au gizmo)`,
+        ? `${t('Selection deleted —')} ${n} ${t('splats')}`
+        : `${t(kind === 'duplicate' ? 'Selection duplicated —' : 'Selection extracted —')} ${n} ${t('splats')} → “${newLayer.name}” ${t('(move it with the gizmo)')}`,
       7000
     )
     console.log(`[selop] ${kind} OK — ${count}/${total} splats`)
@@ -1088,12 +1284,12 @@ $('sel-delete').addEventListener('click', () => selectionOp('delete'))
 async function applyEdits() {
   const bakeShapes = crop.shapes.filter((s) => s.mode !== 'select')
   if (!crop.active || bakeShapes.length === 0) {
-    showToast('Aucune forme Garder/Effacer à appliquer (les Sélections ont leurs propres boutons)')
+    showToast(t('No Keep/Erase shape to apply (Selections have their own buttons)'))
     return
   }
   const vis = visibleLayers()
   if (vis.length === 0) return
-  showLoading('Application des édits…')
+  showLoading(t('Applying edits…'))
   await new Promise((r) => setTimeout(r, 30)) // laisse l'overlay s'afficher
   try {
     crop.root.updateMatrixWorld(true)
@@ -1133,7 +1329,7 @@ async function applyEdits() {
     refreshSceneUI()
     scheduleSceneSave()
     showToast(
-      `Édits appliqués — ${kept.toLocaleString('fr-FR')}/${total.toLocaleString('fr-FR')} splats conservés · Exporte (.spz/.ply) pour sauvegarder`,
+      `${t('Edits applied —')} ${nfmt(kept)}/${nfmt(total)} ${t('splats kept')} · ${t('export (.spz/.ply) to save')}`,
       7000
     )
     console.log(`[bake] OK — ${kept}/${total} splats conservés`)
@@ -1271,7 +1467,11 @@ function setBrush(mode) {
     brush.cursor.visible = false
     canvas.style.cursor = 'crosshair'
     showToast(
-      `Pinceau ${mode === 'erase' ? 'Gomme' : 'Sélection'} — glisser : peindre · molette : rayon · B/Échap : quitter`,
+      t(
+        mode === 'erase'
+          ? 'Eraser brush — drag: paint · wheel: radius · B/Esc: quit'
+          : 'Selection brush — drag: paint · wheel: radius · B/Esc: quit'
+      ),
       5000
     )
   } else {
@@ -1635,7 +1835,7 @@ function undo() {
   if (!op) return
   applyOp(op, true)
   redoStack.push(op)
-  showToast('Annulé')
+  showToast(t('Undone'))
 }
 
 function redo() {
@@ -1643,7 +1843,7 @@ function redo() {
   if (!op) return
   applyOp(op, false)
   undoStack.push(op)
-  showToast('Rétabli')
+  showToast(t('Redone'))
 }
 
 // ---------------------------------------------------------------------------
@@ -1666,10 +1866,11 @@ const baseName = (p) => p.split(/[\\/]/).pop()
 async function captureScreenshot() {
   const stem = (activeLayer?.name || 'capture').replace(/\.[^.]+$/, '')
   const filePath = await window.api.saveAs({
+    title: t('Save'),
     defaultName: `${stem}_capture.png`,
     filters: [
-      { name: 'Image PNG', extensions: ['png'] },
-      { name: 'Image JPEG', extensions: ['jpg'] }
+      { name: t('PNG image'), extensions: ['png'] },
+      { name: t('JPEG image'), extensions: ['jpg'] }
     ]
   })
   if (!filePath) return
@@ -1692,7 +1893,7 @@ async function captureScreenshot() {
     await window.api.writeFile(filePath, bytes.buffer)
 
     addCameraMarker()
-    showToast(`Capture enregistrée — ${baseName(filePath)}`)
+    showToast(`${t('Screenshot saved —')} ${baseName(filePath)}`)
   } catch (err) {
     showError(err)
   }
@@ -1704,7 +1905,7 @@ async function captureScreenshot() {
 async function exportFile(forcedPath = null) {
   const vis = visibleLayers()
   if (vis.length === 0) {
-    showToast('Aucun calque visible à exporter')
+    showToast(t('No visible layer to export'))
     return
   }
   // Un seul calque : son nom ; plusieurs : « scene » (fusion des calques visibles).
@@ -1712,18 +1913,19 @@ async function exportFile(forcedPath = null) {
   const filePath =
     forcedPath ||
     (await window.api.saveAs({
+      title: t('Save'),
       defaultName: `${stem}.spz`,
       filters: [
-        { name: 'SPZ compressé', extensions: ['spz'] },
-        { name: 'PLY 3D Gaussian Splatting', extensions: ['ply'] }
+        { name: t('Compressed SPZ'), extensions: ['spz'] },
+        { name: t('3D Gaussian Splatting PLY'), extensions: ['ply'] }
       ]
     }))
   if (!filePath) return
-  showLoading('Export en cours…')
+  showLoading(t('Exporting…'))
   try {
     const out = /\.spz$/i.test(filePath) ? await exportSpz() : exportPly()
     await window.api.writeFile(filePath, out.buffer ?? out)
-    showToast(`Exporté — ${baseName(filePath)}`)
+    showToast(`${t('Exported —')} ${baseName(filePath)}`)
     console.log(`[export] OK — ${baseName(filePath)} (${(out.byteLength / 1048576).toFixed(1)} Mo)`)
   } catch (err) {
     console.log(`[export] ERREUR: ${err?.message || err}`)
@@ -1752,7 +1954,7 @@ async function exportSpz() {
   const missing = vis.find((l) => !l.filePath)
   if (missing) {
     throw new Error(
-      `Source introuvable pour « ${missing.name} » — rouvre ce fichier depuis son emplacement pour l'exporter en SPZ.`
+      `${t('Source file missing for')} “${missing.name}” ${t('— reopen it from its location to export as SPZ.')}`
     )
   }
   const inputs = []
@@ -1802,7 +2004,7 @@ function exportPly() {
         if (insideCrop(tmp)) n++
       })
     }
-    if (n === 0) throw new Error('Aucun splat conservé par les formes d’édition')
+    if (n === 0) throw new Error(t('No splats kept by the edit shapes'))
     console.log(`[export] nettoyage: ${n}/${total} splats conservés`)
   }
   const props = [
@@ -1936,7 +2138,7 @@ function layoutCamframe() {
   camframe.style.borderRightWidth = `${window.innerWidth - left - fw}px`
   camframe.style.borderTopWidth = `${topPx}px`
   camframe.style.borderBottomWidth = `${window.innerHeight - topPx - fh}px`
-  cfLabel.textContent = `Perspective Caméra · ${w}×${h}`
+  cfLabel.textContent = `${t('Camera Perspective')} · ${w}×${h}`
 }
 
 tlRes.value = localStorage.getItem('nex-anim-res') || '1920x1080'
@@ -1961,7 +2163,7 @@ function cycleGuides() {
   const i = GUIDE_MODES.indexOf(tlGuides.value)
   tlGuides.value = GUIDE_MODES[(i + 1) % GUIDE_MODES.length]
   tlGuides.dispatchEvent(new Event('change'))
-  showToast(`Guides : ${tlGuides.options[tlGuides.selectedIndex].text}`)
+  showToast(`${t('Guides:')} ${tlGuides.options[tlGuides.selectedIndex].text}`)
 }
 window.addEventListener('resize', () => {
   if (!camframe.hidden) layoutCamframe()
@@ -1971,7 +2173,7 @@ window.addEventListener('resize', () => {
 // d'une seconde : enchaîner « cadrer → K → cadrer → K » suffit à bloquer un plan.
 function addKeyframe() {
   if (timelinePanel.hidden) toggleTimeline()
-  const t = anim.time
+  const time = anim.time
   // Cible re-dérivée devant la caméra (à la distance du pivot d'orbite) : garantit
   // lookAt(cible) ≡ orientation de la clé — une clé posée juste après un vol
   // garderait sinon une cible d'orbite obsolète.
@@ -1982,7 +2184,7 @@ function addKeyframe() {
     quaternion: camera.quaternion.clone(),
     target: camera.position.clone().addScaledVector(forward, dist)
   }
-  const existing = anim.keys.find((k) => Math.abs(k.t - t) < anim.duration * 0.005)
+  const existing = anim.keys.find((k) => Math.abs(k.t - time) < anim.duration * 0.005)
   if (existing) {
     pushUndo({
       type: 'key-set',
@@ -1997,13 +2199,13 @@ function addKeyframe() {
     Object.assign(existing, pose)
     anim.selected = existing
   } else {
-    const key = { t, ...pose }
+    const key = { t: time, ...pose }
     anim.keys.push(key)
     anim.keys.sort((a, b) => a.t - b.t)
     anim.selected = key
     pushUndo({ type: 'key-add', key })
-    if (t < anim.duration - 1e-3) {
-      anim.time = Math.min(t + 1, anim.duration)
+    if (time < anim.duration - 1e-3) {
+      anim.time = Math.min(time + 1, anim.duration)
       updatePlayhead()
     }
   }
@@ -2011,7 +2213,8 @@ function addKeyframe() {
   rebuildPath()
   scheduleSceneSave()
   showToast(
-    `Clé caméra à ${t.toFixed(2)} s — ${anim.keys.length} clé${anim.keys.length > 1 ? 's' : ''}`
+    `${t('Camera key at')} ${time.toFixed(2)} s — ${anim.keys.length} ${anim.keys.length > 1 ? t('keys') : t('Key').toLowerCase()}`,
+    3500
   )
 }
 
@@ -2132,7 +2335,7 @@ function togglePlay() {
     settleControls()
   } else {
     if (anim.keys.length < 2) {
-      showToast('Pose au moins 2 clés caméra (K) pour lire l’animation')
+      showToast(t('Set at least 2 camera keys (K) to play the animation'))
       return
     }
     if (anim.time >= anim.duration - 1e-3) anim.time = 0
@@ -2174,7 +2377,7 @@ function renderKeys() {
       'tl-key' + (k === anim.selected ? ' selected' : '') + (k.ease ? ' eased' : '')
     d.style.left = `${(k.t / anim.duration) * 100}%`
     d.dataset.idx = i
-    d.title = `${k.t.toFixed(2)} s${k.ease ? ' · amortie' : ''} — clic : aller à la clé · glisser : décaler · double-clic ou A : amorti · clic droit : supprimer`
+    d.title = `${k.t.toFixed(2)} s${k.ease ? ` · ${t('eased')}` : ''} — ${t('click: go to key · drag: retime · double-click or A: easing · right-click: delete')}`
     tlKeys.appendChild(d)
   })
 }
@@ -2185,7 +2388,7 @@ function toggleKeyEase(key = anim.selected) {
   key.ease = !key.ease
   pushUndo({ type: 'key-ease', key })
   renderKeys()
-  showToast(`Clé ${key.t.toFixed(2)} s — amorti ${key.ease ? 'activé' : 'désactivé'}`)
+  showToast(`${t('Key')} ${key.t.toFixed(2)} s — ${t(key.ease ? 'easing on' : 'easing off')}`)
   scheduleSceneSave()
 }
 
@@ -2423,7 +2626,7 @@ async function exportChan(filePath, fps, totalFrames) {
     new TextEncoder().encode(lines.join('\n') + '\n').buffer
   )
   showToast(
-    `Caméra Nuke exportée — ${baseName(filePath)} (${totalFrames} frames · rot ZXY · focale ${focal.toFixed(1)} mm)`,
+    `${t('Nuke camera exported —')} ${baseName(filePath)} (${totalFrames} ${t('frames')} · rot ZXY · ${t('focal')} ${focal.toFixed(1)} mm)`,
     6000
   )
   console.log(`[chan] OK — ${baseName(filePath)} ${totalFrames} frames, focale ${focal.toFixed(2)} mm`)
@@ -2432,18 +2635,19 @@ async function exportChan(filePath, fps, totalFrames) {
 async function exportVideo(forcedPath = null, forcedOpts = null) {
   if (exporting) return
   if (anim.keys.length < 2) {
-    showToast('Pose au moins 2 clés caméra (K) avant l’export')
+    showToast(t('Set at least 2 camera keys (K) before exporting'))
     return
   }
   const stem = (activeLayer?.name || 'scene').replace(/\.[^.]+$/, '')
   const filePath =
     forcedPath ||
     (await window.api.saveAs({
+      title: t('Save'),
       defaultName: `${stem}_playblast.mp4`,
       filters: [
-        { name: 'Vidéo MP4', extensions: ['mp4'] },
-        { name: 'Séquence d’images PNG', extensions: ['png'] },
-        { name: 'Caméra Nuke (.chan)', extensions: ['chan'] }
+        { name: t('MP4 video'), extensions: ['mp4'] },
+        { name: t('PNG image sequence'), extensions: ['png'] },
+        { name: t('Nuke camera (.chan)'), extensions: ['chan'] }
       ]
     }))
   if (!filePath) return
@@ -2481,7 +2685,7 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
     scene.background = null
     renderer.setClearColor(0x000000, 0)
   }
-  showLoading(isSeq ? 'Export séquence PNG…' : 'Export MP4…')
+  showLoading(t(isSeq ? 'Exporting PNG sequence…' : 'Exporting MP4…'))
 
   // FOV recadré : le cadre couvre une fraction de la hauteur du viewport ; on
   // rend un frustum réduit d'autant pour que l'export == contenu du cadre.
@@ -2551,7 +2755,7 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
     const seqPath = (n) => filePath.replace(/\.png$/i, `.${String(n).padStart(4, '0')}.png`)
 
     for (let i = 0; i < totalFrames; i++) {
-      if (cancelled) throw new Error('Export annulé')
+      if (cancelled) throw new Error(t('Export cancelled'))
       if (encoderError) throw encoderError
       applySample((i / fps))
       renderer.render(scene, camera)
@@ -2592,14 +2796,14 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
           await new Promise((r) => encoder.addEventListener('dequeue', r, { once: true }))
         }
       }
-      setProgress(`Export ${isSeq ? 'PNG' : 'MP4'} — Échap pour annuler…`, i + 1, totalFrames)
+      setProgress(`${isSeq ? 'PNG' : 'MP4'} ${t('— Esc to cancel')}`, i + 1, totalFrames)
       // Laisse respirer l'UI et le tri des splats (worker Spark) entre les frames.
       await new Promise((r) => (document.hidden ? setTimeout(r, 0) : requestAnimationFrame(r)))
     }
     const secs = ((performance.now() - t0) / 1000).toFixed(1)
     if (isSeq) {
       const pattern = `${baseName(filePath).replace(/\.png$/i, '')}.####.png`
-      showToast(`Séquence exportée — ${totalFrames} images · ${pattern} (${secs} s)`, 6000)
+      showToast(`${t('Sequence exported —')} ${totalFrames} ${t('images')} · ${pattern} (${secs} s)`, 6000)
       console.log(`[seq] OK — ${pattern} ${w}x${h} ${totalFrames} frames`)
     } else {
       await encoder.flush()
@@ -2609,12 +2813,12 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
       const size = await window.api.closeWrite(writeId)
       writeClosed = true
       const mb = (size / 1048576).toFixed(1)
-      showToast(`Playblast exporté — ${baseName(filePath)} (${mb} Mo · ${secs} s)`, 6000)
+      showToast(`${t('Playblast exported —')} ${baseName(filePath)} (${mb} MB · ${secs} s)`, 6000)
       console.log(`[video] OK — ${baseName(filePath)} ${w}x${h}@${fps} ${totalFrames} frames (${mb} Mo)`)
     }
   } catch (err) {
     console.log(`[video] ERREUR: ${err?.message || err}`)
-    if (cancelled) showToast('Export annulé')
+    if (cancelled) showToast(t('Export cancelled'))
     else showError(err)
   } finally {
     // Export interrompu : referme proprement le fichier partiel.
@@ -2649,16 +2853,16 @@ async function importChan(forcedPath = null) {
   const filePath =
     forcedPath ||
     (await window.api.pickFile({
-      title: 'Importer une caméra Nuke (.chan)',
+      title: t('Import a Nuke camera (.chan)'),
       filters: [
-        { name: 'Caméra Nuke (.chan)', extensions: ['chan'] },
-        { name: 'Tous les fichiers', extensions: ['*'] }
+        { name: t('Nuke camera (.chan)'), extensions: ['chan'] },
+        { name: t('All files'), extensions: ['*'] }
       ]
     }))
   if (!filePath) return
   const txt = await window.api.readText(filePath)
   if (!txt) {
-    showToast('Lecture du fichier .chan impossible')
+    showToast(t('Could not read the .chan file'))
     return
   }
   const rows = txt
@@ -2668,7 +2872,7 @@ async function importChan(forcedPath = null) {
     .map((l) => l.split(/[\s,]+/).map(Number))
     .filter((r) => r.length >= 7 && r.every((n) => isFinite(n)))
   if (rows.length < 2) {
-    showToast('Fichier .chan invalide (au moins 2 frames attendues)')
+    showToast(t('.chan file invalid (at least 2 frames expected)'))
     return
   }
   const before = { keys: [...anim.keys], duration: anim.duration, curve: anim.curve }
@@ -2709,7 +2913,10 @@ async function importChan(forcedPath = null) {
   applySample(0)
   settleControls()
   scheduleSceneSave()
-  showToast(`Caméra importée — ${rows.length} frames @ ${fps} fps · courbe Linéaire`, 6000)
+  showToast(
+    `${t('Camera imported —')} ${rows.length} ${t('frames')} @ ${fps} fps · ${t('Linear curve')}`,
+    6000
+  )
   console.log(`[chanimp] OK — ${baseName(filePath)} ${rows.length} frames`)
 }
 $('tl-import').addEventListener('click', () => importChan())
@@ -2964,7 +3171,7 @@ async function restoreScene(text, firstLayer) {
     refreshSceneUI()
     const nk = anim.keys.length
     showToast(
-      `Scène restaurée — ${layers.length} calque${layers.length > 1 ? 's' : ''}, ${nk} clé${nk > 1 ? 's' : ''}`,
+      `${t('Scene restored —')} ${layers.length} ${t('layers')}, ${nk} ${t('keys')}`,
       5000
     )
     console.log(`[scene] restaurée (${layers.length} calques, ${nk} clés)`)
@@ -2985,7 +3192,7 @@ const recentsBox = $('recents')
 const recentsList = $('recents-list')
 
 async function openPath(filePath) {
-  showLoading('Lecture du fichier…')
+  showLoading(t('Reading file…'))
   try {
     // Lecture en flux : les chunks sont tirés du disque à la demande du
     // décodeur Spark — les gros scans ne sont jamais copiés entiers en RAM.
@@ -3000,7 +3207,7 @@ async function openPath(filePath) {
           return
         }
         pulled += chunk.byteLength
-        setProgress('Décodage…', pulled, info.size)
+        setProgress(t('Decoding…'), pulled, info.size)
         controller.enqueue(new Uint8Array(chunk))
       },
       cancel() {
@@ -3058,7 +3265,13 @@ window.api.onOpenPath?.(async (filePath) => {
 // ---------------------------------------------------------------------------
 async function openViaDialog() {
   try {
-    const filePath = await window.api.pickFile()
+    const filePath = await window.api.pickFile({
+      title: t('Open a splat file'),
+      filters: [
+        { name: t('Splat files'), extensions: ['ply', 'spz', 'splat', 'ksplat'] },
+        { name: t('All files'), extensions: ['*'] }
+      ]
+    })
     if (!filePath) return
     await openPath(filePath)
   } catch (err) {
@@ -3080,14 +3293,14 @@ function setProgress(label, loaded, total) {
 }
 
 window.api.onLoadProgress?.(({ loaded, total }) => {
-  if (!loading.hidden) setProgress('Lecture du fichier…', loaded, total)
+  if (!loading.hidden) setProgress(t('Reading file…'), loaded, total)
 })
 
 // `source` : ArrayBuffer (glisser-déposer sans chemin) ou { stream, length }
 // (lecture en flux depuis le disque via openPath).
 async function loadFile(source, fileName, filePath = null) {
   const t0 = performance.now()
-  showLoading(`Décodage de ${fileName}…`)
+  showLoading(`${t('Decoding')} ${fileName}…`)
   errorBox.hidden = true
 
   try {
@@ -3112,7 +3325,7 @@ async function loadFile(source, fileName, filePath = null) {
             bytes.slice(streamOffset, Math.min(streamOffset + CHUNK, bytes.length))
           )
           streamOffset += CHUNK
-          setProgress('Décodage…', Math.min(streamOffset, bytes.length), bytes.length)
+          setProgress(t('Decoding…'), Math.min(streamOffset, bytes.length), bytes.length)
         }
       })
     } else {
@@ -3150,7 +3363,7 @@ async function loadFile(source, fileName, filePath = null) {
     const mb = streamLength / 1048576
     const secs = ((performance.now() - t0) / 1000).toFixed(1)
     showToast(
-      `Calque ${layers.length} — ${nSplats.toLocaleString('fr-FR')} splats · ${mb < 1 ? (mb * 1024).toFixed(0) + ' Ko' : mb.toFixed(1) + ' Mo'} · ${secs} s`,
+      `${t('Layer')} ${layers.length} — ${nfmt(nSplats)} ${t('splats')} · ${mb < 1 ? (mb * 1024).toFixed(0) + ' KB' : mb.toFixed(1) + ' MB'} · ${secs} s`,
       5000
     )
   } catch (err) {
@@ -3267,7 +3480,7 @@ function renderLayersList() {
     const eye = document.createElement('button')
     eye.className = 'l-eye'
     eye.textContent = layer.visible ? '●' : '○'
-    eye.title = layer.visible ? 'Masquer' : 'Afficher'
+    eye.title = t(layer.visible ? 'Hide' : 'Show')
     eye.addEventListener('click', (e) => {
       e.stopPropagation()
       toggleLayerVisible(layer)
@@ -3276,7 +3489,7 @@ function renderLayersList() {
     const name = document.createElement('span')
     name.className = 'l-name'
     name.textContent = layer.name
-    name.title = `${layer.filePath || layer.name} — double-clic : renommer`
+    name.title = `${layer.filePath || layer.name} ${t('— double-click to rename')}`
     name.addEventListener('dblclick', (e) => {
       e.stopPropagation()
       const input = document.createElement('input')
@@ -3309,7 +3522,7 @@ function renderLayersList() {
     const del = document.createElement('button')
     del.className = 'l-del'
     del.textContent = '✕'
-    del.title = 'Supprimer le calque'
+    del.title = t('Delete the layer')
     del.addEventListener('click', (e) => {
       e.stopPropagation()
       deleteLayer(layer)
@@ -3328,7 +3541,7 @@ function renderLayersList() {
       op.step = '0.01'
       op.value = String(layer.mesh.opacity ?? 1)
       op.className = 'l-opacity'
-      op.title = 'Opacité du calque'
+      op.title = t('Layer opacity')
       op.addEventListener('input', () => {
         layer.mesh.opacity = Number(op.value)
         scheduleSceneSave()
@@ -3356,7 +3569,7 @@ function updateHud() {
   hudFile.textContent = activeLayer ? activeLayer.name : 'Aucun fichier'
   const total = visibleLayers().reduce((n, l) => n + (l.mesh.packedSplats?.numSplats ?? 0), 0)
   hudSplats.textContent = total
-    ? `${total.toLocaleString('fr-FR')} splats${visibleLayers().length > 1 ? ` · ${visibleLayers().length} calques` : ''}`
+    ? `${nfmt(total)} ${t('splats')}${visibleLayers().length > 1 ? ` · ${visibleLayers().length} ${t('layers')}` : ''}`
     : ''
 }
 
@@ -3459,3 +3672,8 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
 })
+
+// ---------------------------------------------------------------------------
+// Langue : applique la langue mémorisée (anglais par défaut) au démarrage.
+// ---------------------------------------------------------------------------
+applyLanguage()
