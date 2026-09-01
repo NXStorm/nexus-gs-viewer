@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; worker-src 'self' blob:; connect-src 'self' data: blob:;"
+    />
+    <title>NEX GS Viewer</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <canvas id="viewport"></canvas>
+    <div id="vignette"></div>
+
+    <!-- Barre d'outils -->
+    <header id="toolbar">
+      <div class="brand">
+        <span class="brand-word">NEXUS<i>.</i></span>
+        <span class="brand-sub">GS Viewer</span>
+      </div>
+      <div class="spacer"></div>
+      <button id="btn-open" class="btn primary">Ouvrir…</button>
+      <button id="btn-reset" class="btn" title="Recadrer la vue (F)">Recadrer</button>
+      <button id="btn-flip" class="btn" title="Retourner haut/bas (X)">Retourner</button>
+      <button id="btn-grid" class="btn" title="Grille de sol + axes (V)">Grille</button>
+      <div class="seg" id="gizmo-seg" title="Transformer l'objet">
+        <button id="btn-gizmo-translate" class="btn seg-btn" title="Déplacer (W)">Déplacer</button>
+        <button id="btn-gizmo-rotate" class="btn seg-btn" title="Pivoter (E)">Pivoter</button>
+        <button id="btn-gizmo-scale" class="btn seg-btn" title="Échelle (R)">Échelle</button>
+      </div>
+      <button id="btn-crop" class="btn" title="Édition / nettoyage (C) — boîtes, sphères, cylindres, plans en mode Garder ou Effacer ; l'export .spz/.ply écrit la scène nettoyée">Édition</button>
+      <button id="btn-shot" class="btn" title="Capture d'écran PNG/JPG (P) — pose une caméra 3D à cet angle">Capture</button>
+      <button id="btn-anim" class="btn" title="Timeline d'animation caméra (T)">Animation</button>
+      <button id="btn-export" class="btn" title="Exporter en .spz compressé ou .ply">Exporter</button>
+      <button id="btn-help" class="btn" title="Afficher/masquer les raccourcis (H)">?</button>
+      <label class="bg-label" title="Couleur de fond">
+        Fond
+        <input id="bg-color" type="color" value="#050505" />
+      </label>
+    </header>
+
+    <!-- Panneau des calques (façon Photoshop, côté gauche) -->
+    <aside id="layers-panel" hidden>
+      <div class="layers-title">Calques</div>
+      <ul id="layers-list"></ul>
+    </aside>
+
+    <!-- Panneau d'édition / nettoyage (formes Garder / Effacer) -->
+    <aside id="edit-panel" hidden>
+      <div class="layers-title">Édition — nettoyage</div>
+      <div class="edit-add">
+        <button class="btn e-add" data-shape="box" title="Ajouter une boîte">+ Boîte</button>
+        <button class="btn e-add" data-shape="sphere" title="Ajouter une sphère">+ Sphère</button>
+        <button class="btn e-add" data-shape="cylinder" title="Ajouter un cylindre">+ Cyl.</button>
+        <button class="btn e-add" data-shape="plane" title="Ajouter un plan de coupe (flèche = côté conservé quand Effacer)">+ Plan</button>
+      </div>
+      <div class="edit-add edit-brushes">
+        <button id="brush-erase" class="btn e-add" title="Pinceau Gomme (B) — glisser pour effacer, molette : rayon">🖌 Gomme</button>
+        <button id="brush-select" class="btn e-add" title="Pinceau Sélection (B×2) — glisser pour sélectionner (surligné bleu), molette : rayon">🖌 Sélection</button>
+      </div>
+      <div class="edit-add" id="edit-selops" hidden>
+        <button id="sel-extract" class="btn e-add" title="Coupe les splats sélectionnés vers un nouveau calque (déplaçable au gizmo)">Extraire</button>
+        <button id="sel-duplicate" class="btn e-add" title="Copie les splats sélectionnés vers un nouveau calque">Dupliquer</button>
+        <button id="sel-delete" class="btn e-add sel-del" title="Supprime les splats sélectionnés">Supprimer</button>
+      </div>
+      <label class="edit-soft" title="Bord doux : fondu progressif au bord des formes (visible dans le viewport et les playblasts ; l'export .spz/.ply reste net)">
+        <span>Bord doux</span>
+        <input id="edit-softedge" type="range" min="0" max="1" step="0.01" value="0" />
+      </label>
+      <ul id="edit-list"></ul>
+      <button id="edit-apply" class="btn primary e-apply" title="Grave définitivement les édits dans les calques : les splats masqués sont supprimés, les formes consommées (annulable Ctrl+Z). Harmoniques d'ordre > 0 non conservées — exporte ensuite pour sauvegarder.">Appliquer les édits</button>
+    </aside>
+
+    <!-- Panneau des raccourcis (translucide, côté droit) -->
+    <aside id="shortcuts">
+      <div class="sc-group">
+        <div class="sc-title">Navigation</div>
+        <div class="sc-row"><span>Orbite</span><kbd>Clic gauche</kbd></div>
+        <div class="sc-row"><span>Zoom (vers curseur)</span><kbd>Molette</kbd></div>
+        <div class="sc-row"><span>Déplacer la vue</span><kbd>Clic milieu</kbd></div>
+        <div class="sc-row"><span>Vol libre</span><kbd>Clic droit maintenu</kbd></div>
+      </div>
+      <div class="sc-group">
+        <div class="sc-title">Vol</div>
+        <div class="sc-row"><span>Avancer / latéral</span><kbd>Z Q S D</kbd></div>
+        <div class="sc-row"><span>Monter / descendre</span><kbd>E</kbd><kbd>A</kbd></div>
+        <div class="sc-row"><span>Vitesse</span><kbd>Molette</kbd></div>
+        <div class="sc-row"><span>Boost ×3</span><kbd>Maj</kbd></div>
+      </div>
+      <div class="sc-group">
+        <div class="sc-title">Objet</div>
+        <div class="sc-row"><span>Déplacer</span><kbd>W</kbd></div>
+        <div class="sc-row"><span>Pivoter</span><kbd>E</kbd></div>
+        <div class="sc-row"><span>Échelle</span><kbd>R</kbd></div>
+        <div class="sc-row"><span>Masquer le gizmo</span><kbd>Q</kbd></div>
+      </div>
+      <div class="sc-group">
+        <div class="sc-title">Général</div>
+        <div class="sc-row"><span>Ouvrir</span><kbd>O</kbd></div>
+        <div class="sc-row"><span>Capture PNG/JPG</span><kbd>P</kbd></div>
+        <div class="sc-row"><span>Recadrer</span><kbd>F</kbd></div>
+        <div class="sc-row"><span>Retourner</span><kbd>X</kbd></div>
+        <div class="sc-row"><span>Grille de sol</span><kbd>V</kbd></div>
+        <div class="sc-row"><span>Édition / nettoyage</span><kbd>C</kbd></div>
+        <div class="sc-row"><span>Pinceau gomme/sélection</span><kbd>B</kbd></div>
+        <div class="sc-row"><span>Annuler / Rétablir</span><kbd>Ctrl Z</kbd><kbd>Ctrl Y</kbd></div>
+        <div class="sc-row"><span>Ce panneau</span><kbd>H</kbd></div>
+      </div>
+      <div class="sc-group">
+        <div class="sc-title">Caméras posées</div>
+        <div class="sc-row"><span>Revenir à l'angle</span><kbd>Clic caméra</kbd></div>
+      </div>
+      <div class="sc-group">
+        <div class="sc-title">Animation</div>
+        <div class="sc-row"><span>Timeline</span><kbd>T</kbd></div>
+        <div class="sc-row"><span>Poser une clé</span><kbd>K</kbd></div>
+        <div class="sc-row"><span>Lecture / pause</span><kbd>Espace</kbd></div>
+        <div class="sc-row"><span>Supprimer la clé</span><kbd>Suppr</kbd></div>
+        <div class="sc-row"><span>Guides du cadre</span><kbd>G</kbd></div>
+        <div class="sc-row"><span>Amorti de la clé</span><kbd>A</kbd></div>
+        <div class="sc-row"><span>Réglages</span><kbd>S</kbd></div>
+      </div>
+    </aside>
+
+    <!-- Cadre caméra façon Blender : visible quand la timeline est ouverte.
+         Les bordures (semi-transparentes, calculées en JS) forment le
+         passe-partout ; .cf-rect trace le liseré pointillé du cadre. -->
+    <div id="camframe" hidden data-guides="none">
+      <div class="cf-rect">
+        <div class="cf-thirds"></div>
+        <div class="cf-center"></div>
+        <div class="cf-safe cf-safe-action"></div>
+        <div class="cf-safe cf-safe-title"></div>
+        <div class="cf-label">Perspective Caméra</div>
+      </div>
+    </div>
+
+    <!-- Timeline d'animation caméra (playblast) -->
+    <div id="timeline" hidden>
+      <button id="tl-play" class="btn tl-btn" title="Lecture / pause (Espace)">▶</button>
+      <button id="tl-rewind" class="btn tl-btn" title="Retour au début">⏮</button>
+      <span id="tl-time" class="tl-time">0.00 / 5.00 s</span>
+      <div id="tl-ruler">
+        <div id="tl-ticks"></div>
+        <div id="tl-keys"></div>
+        <div id="tl-playhead"></div>
+      </div>
+      <button id="tl-addkey" class="btn tl-btn" title="Poser une clé caméra à cet instant (K)">◆ Clé</button>
+      <button id="tl-gear" class="btn tl-btn" title="Réglages d'animation et d'export (S)">⚙</button>
+      <button id="tl-import" class="btn tl-btn" title="Importer une caméra Nuke .chan — une clé par frame, courbe Linéaire">⤓ Chan</button>
+
+      <!-- Panneau de réglages repliable, ancré au-dessus de la timeline -->
+      <div id="tl-settings" hidden>
+        <div class="ts-title">Réglages</div>
+        <label class="tl-label ts-row" title="Courbe d'animation — interpolation entre les clés">
+          <span>Courbe</span>
+          <select id="tl-curve">
+            <option value="ease" selected>Fluide amorti</option>
+            <option value="smooth">Fluide</option>
+            <option value="linear">Linéaire</option>
+            <option value="stops">Pause sur clés</option>
+          </select>
+        </label>
+        <label class="tl-label ts-row" title="Durée de l'animation — les clés existantes sont re-calées proportionnellement">
+          <span>Durée (s)</span>
+          <input id="tl-duration" type="number" min="1" max="600" step="1" value="5" />
+        </label>
+        <label class="tl-label ts-row" title="Images par seconde">
+          <span>Cadence (fps)</span>
+          <select id="tl-fps">
+            <option>24</option>
+            <option>25</option>
+            <option selected>30</option>
+            <option>50</option>
+            <option>60</option>
+          </select>
+        </label>
+        <label class="tl-label ts-row" title="Format et résolution d'export — le cadre caméra montre exactement ce qui sera rendu">
+          <span>Format</span>
+          <select id="tl-res">
+            <option value="1920x1080" selected>1080p</option>
+            <option value="3840x2160">4K</option>
+            <option value="1920x804">Scope 2.39</option>
+            <option value="3840x1608">4K Scope</option>
+            <option value="1080x1920">Vertical 9:16</option>
+            <option value="1080x1080">Carré 1:1</option>
+          </select>
+        </label>
+        <label class="tl-label ts-row" title="Guides de composition dans le cadre caméra (G)">
+          <span>Guides</span>
+          <select id="tl-guides">
+            <option value="none" selected>Sans guides</option>
+            <option value="thirds">Tiers</option>
+            <option value="thirds-safe">Tiers + safe</option>
+            <option value="safe">Zones safe</option>
+            <option value="center">Croix centrale</option>
+          </select>
+        </label>
+        <label class="tl-label ts-row" title="Burn-in : incruster timecode, nom et numéro de frame dans l'export (reviews)">
+          <span>Burn-in TC</span>
+          <input id="tl-burnin" type="checkbox" />
+        </label>
+        <label class="tl-label ts-row" title="Séquence PNG : fond transparent (canal alpha), pour le compositing">
+          <span>PNG alpha</span>
+          <input id="tl-alpha" type="checkbox" />
+        </label>
+      </div>
+      <button id="btn-video" class="btn primary tl-btn" title="Exporter la vue caméra — MP4, séquence PNG ou caméra Nuke .chan (type choisi dans le dialogue d'enregistrement)">Export</button>
+    </div>
+
+    <!-- Notification transitoire -->
+    <div id="toast" hidden></div>
+
+    <!-- HUD infos -->
+    <div id="hud">
+      <span id="hud-file">Aucun fichier</span>
+      <span id="hud-splats"></span>
+      <span id="hud-fps"></span>
+      <span id="hud-speed"></span>
+    </div>
+
+    <!-- Zone d'accueil / drop -->
+    <div id="dropzone">
+      <div class="drop-card">
+        <div class="wordmark">NEX<br />US<span class="dot">.</span></div>
+        <div class="tagline">GS Viewer — R&amp;D IA</div>
+        <h1>Glisse un fichier splat ici</h1>
+        <p class="formats">.PLY · .SPZ · .SPLAT · .KSPLAT</p>
+        <p class="hint">
+          <b>Clic droit maintenu</b> : vol libre (ZQSD) ·
+          raccourcis sur le panneau de droite (<b>H</b>)
+        </p>
+        <button id="btn-open-2" class="btn primary big">Ouvrir un fichier</button>
+        <div id="recents" hidden>
+          <div class="recents-title">Fichiers récents</div>
+          <ul id="recents-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overlay de chargement -->
+    <div id="loading" hidden>
+      <div class="spinner"></div>
+      <div id="loading-text">Chargement…</div>
+      <div class="progress" id="progress" hidden><div id="progress-fill"></div></div>
+    </div>
+
+    <!-- Overlay d'erreur -->
+    <div id="error" hidden>
+      <div class="error-card">
+        <div class="error-title">Impossible de charger le fichier</div>
+        <div id="error-msg" class="error-msg"></div>
+        <button id="btn-error-close" class="btn">Fermer</button>
+      </div>
+    </div>
+
+    <div id="drag-overlay" hidden><div>Déposer pour ouvrir</div></div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

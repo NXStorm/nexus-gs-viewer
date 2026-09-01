@@ -1,0 +1,39 @@
+{
+  "name": "nex-gs-viewer",
+  "productName": "NEX GS Viewer",
+  "version": "0.8.0",
+  "description": "NEX GS Viewer — visionneuse de Gaussian Splatting (.ply, .spz, .splat, .ksplat) pour Windows",
+  "main": "./out/main/index.js",
+  "author": "innoprodigious",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder --win"
+  },
+  "dependencies": {
+    "@sparkjsdev/spark": "^2.1.0",
+    "mp4-muxer": "^5.2.2",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.2.1",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.3.0",
+    "vite": "^5.4.0"
+  },
+  "build": {
+    "appId": "com.innoprodigious.nexgsviewer",
+    "productName": "NEX GS Viewer",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
