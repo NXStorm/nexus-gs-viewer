@@ -6,7 +6,7 @@
 
 **View, clean, animate and export Gaussian Splats — a playblast-ready splat editor built for VFX pipelines.**
 
-![Version](https://img.shields.io/badge/version-0.12.0-white)
+![Version](https://img.shields.io/badge/version-0.13.0-white)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -130,6 +130,8 @@ Requires Node.js 18+.
 3. Move shapes with the gizmo, or drag a **box face** directly; `B` cycles the **eraser / selection brush** (wheel = radius)
 4. With a selection: **Extract** (cut to a new layer), **Duplicate** (copy to a new layer) or **Delete** — the new layer moves with the gizmo
 5. **Apply edits** bakes everything destructively (undoable) so you can iterate; **Export** writes the cleaned `.spz`/`.ply`
+
+> 🔌 **Working in Nuke?** Install [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — a NEXUS Edit node that opens your splat in the viewer and imports the cleaned result back as a GeoImport, one click each way.
 
 ### Nuke round-trip
 

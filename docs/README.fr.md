@@ -6,7 +6,7 @@
 
 **Visionner, nettoyer, animer et exporter des Gaussian Splats — un éditeur de splats pensé playblast, taillé pour les pipelines VFX.**
 
-![Version](https://img.shields.io/badge/version-0.12.0-white)
+![Version](https://img.shields.io/badge/version-0.13.0-white)
 ![Platform](https://img.shields.io/badge/plateforme-Windows%20%7C%20macOS%20%7C%20Linux-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/licence-MIT-green)

@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld('api', {
   onTestVideo: (cb) => ipcRenderer.on('debug:video', (_e, p) => cb(p)),
   onTestCrop: (cb) => ipcRenderer.on('debug:crop', (_e, sc) => cb(sc)),
   onTestChanImport: (cb) => ipcRenderer.on('debug:chanimport', (_e, p) => cb(p)),
+  onRoundtrip: (cb) => ipcRenderer.on('bridge:roundtrip', (_e, p) => cb(p)),
+  onDoRoundtrip: (cb) => ipcRenderer.on('bridge:do-roundtrip', () => cb()),
   // Résout le chemin réel d'un File issu d'un glisser-déposer (Electron 32+).
   getPathForFile: (file) => {
     try {

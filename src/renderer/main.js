@@ -348,6 +348,8 @@ const I18N_FR = {
   'PNG image sequence': "Séquence d'images PNG", 'Nuke camera (.chan)': 'Caméra Nuke (.chan)',
   'Compressed SPZ': 'SPZ compressé', '3D Gaussian Splatting PLY': 'PLY 3D Gaussian Splatting',
   'Screenshot saved —': 'Capture enregistrée —', 'Exported —': 'Exporté —',
+  'Sent to Nuke —': 'Envoyé vers Nuke —',
+  'Send the cleaned scene back to Nuke': 'Renvoyer la scène nettoyée vers Nuke',
   'No visible layer to export': 'Aucun calque visible à exporter',
   Layer: 'Calque', splats: 'splats', layers: 'calques', keys: 'clés', frames: 'frames',
   'Set at least 2 camera keys (K) to play the animation':
@@ -2060,6 +2062,28 @@ function exportPly() {
 $('btn-shot').addEventListener('click', captureScreenshot)
 $('btn-export').addEventListener('click', () => exportFile())
 window.api.onTestExport?.((p) => exportFile(p)) // debug headless
+
+// ---------------------------------------------------------------------------
+// Pont Nuke : lancé avec « --roundtrip sortie.ply », le bouton « → Nuke »
+// exporte la scène nettoyée vers ce chemin (le plugin Nexus-x-Nuke l'importe).
+// ---------------------------------------------------------------------------
+let roundtripPath = null
+
+async function sendToNuke() {
+  if (!roundtripPath) return
+  await exportFile(roundtripPath)
+  console.log(`[roundtrip] OK — ${roundtripPath}`)
+  showToast(`${t('Sent to Nuke —')} ${baseName(roundtripPath)}`, 6000)
+}
+
+window.api.onRoundtrip?.((p) => {
+  roundtripPath = p
+  const btn = $('btn-nuke')
+  btn.hidden = false
+  btn.title = `${t('Send the cleaned scene back to Nuke')} (${p})`
+})
+$('btn-nuke').addEventListener('click', sendToNuke)
+window.api.onDoRoundtrip?.(sendToNuke) // debug headless
 
 // ---------------------------------------------------------------------------
 // Timeline d'animation caméra + export MP4 (playblast)

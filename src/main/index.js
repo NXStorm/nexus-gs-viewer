@@ -77,6 +77,14 @@ function cliRenderOpts(argv) {
   return opts
 }
 
+// Pont Nuke : « exe scene.ply --roundtrip sortie.ply » affiche un bouton
+// « → Nuke » qui exporte la scène nettoyée vers ce chemin.
+function roundtripFromArgv(argv) {
+  const args = argv.slice(app.isPackaged ? 1 : 2)
+  const i = args.indexOf('--roundtrip')
+  return i !== -1 && args[i + 1] ? args[i + 1] : null
+}
+
 function splatPathFromArgv(argv) {
   // Packagé : argv = [exe, ...args] ; dev : argv = [electron, projet, ...args]
   const args = argv.slice(app.isPackaged ? 1 : 2)
@@ -330,6 +338,18 @@ function createWindow() {
     setTimeout(() => mainWindow.webContents.send('debug:video', cliRender), 7000)
   }
 
+  // Pont Nuke : transmet le chemin de retour au renderer une fois chargé.
+  const roundtrip = roundtripFromArgv(process.argv)
+  if (roundtrip) {
+    mainWindow.webContents.on('did-finish-load', () =>
+      mainWindow.webContents.send('bridge:roundtrip', roundtrip)
+    )
+    // Debug : SPLAT_TEST_ROUNDTRIP=1 déclenche l'export retour sans clic.
+    if (process.env['SPLAT_TEST_ROUNDTRIP']) {
+      setTimeout(() => mainWindow.webContents.send('bridge:do-roundtrip'), 6000)
+    }
+  }
+
   // Debug : SPLAT_TEST_CHAN_IMPORT=chemin.chan importe une caméra Nuke sans dialogue.
   const testChan = process.env['SPLAT_TEST_CHAN_IMPORT']
   if (testChan) {
@@ -388,6 +408,9 @@ if (!gotLock) {
     mainWindow.focus()
     const p = splatPathFromArgv(argv)
     if (p) sendFileToRenderer(p)
+    // Relance depuis Nuke alors que l'app tourne déjà : met à jour le retour.
+    const rt = roundtripFromArgv(argv)
+    if (rt) mainWindow.webContents.send('bridge:roundtrip', rt)
   })
 
   // macOS : le Finder livre les fichiers via l'événement open-file (pas argv).
