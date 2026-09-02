@@ -6,8 +6,8 @@
 
 **Visionner, nettoyer, animer et exporter des Gaussian Splats — un éditeur de splats pensé playblast, taillé pour les pipelines VFX.**
 
-![Version](https://img.shields.io/badge/version-0.11.0-white)
-![Platform](https://img.shields.io/badge/plateforme-Windows%20%7C%20macOS-0078d4)
+![Version](https://img.shields.io/badge/version-0.12.0-white)
+![Platform](https://img.shields.io/badge/plateforme-Windows%20%7C%20macOS%20%7C%20Linux-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/licence-MIT-green)
 
@@ -23,7 +23,7 @@
 
 ## Ce que ça fait
 
-**NEXUS GS Viewer** est une visionneuse **et un éditeur** de Gaussian Splatting autonome pour Windows. Glisse un `.ply`, `.spz`, `.splat` ou `.ksplat` et tu obtiens un viewer fluide à 60 fps avec des calques façon Photoshop — plus les deux choses qui manquent à la plupart des viewers de splats :
+**NEXUS GS Viewer** est une visionneuse **et un éditeur** de Gaussian Splatting autonome pour Windows, macOS et Linux. Glisse un `.ply`, `.spz`, `.splat` ou `.ksplat` et tu obtiens un viewer fluide à 60 fps avec des calques façon Photoshop — plus les deux choses qui manquent à la plupart des viewers de splats :
 
 - une **timeline d'animation caméra** avec cadre caméra façon Blender, qui exporte des **playblasts** (MP4, séquences PNG alpha) et des **caméras Nuke** (`.chan`, dans les deux sens),
 - une **panoplie de nettoyage** complète — formes Garder/Effacer, pinceau gomme, sélection de splats avec couper/copier/coller vers des calques, bake destructif — pour transformer un scan brut en asset propre et ré-exportable sans quitter l'app.
@@ -71,14 +71,24 @@ Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol 
 
 Au premier lancement, l'app s'enregistre (par utilisateur, sans droits admin) : `.spz`, `.splat` et `.ksplat` s'ouvrent au double-clic, et `.ply` reçoit une entrée « Ouvrir avec ».
 
-**macOS** (Apple Silicon : `macos-arm64` · Intel : `macos-x64`)
+**macOS** (Apple Silicon : `arm64` · Intel : `x64`)
 
-1. Télécharge le `NEXUS-GS-Viewer-macos-*.zip` correspondant dans les [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
-2. Dézippe et glisse `NEXUS GS Viewer.app` dans Applications
-3. Premier lancement uniquement — l'app n'est pas notarisée : **clic droit → Ouvrir → Ouvrir**, ou :
-   ```bash
-   xattr -cr "/Applications/NEXUS GS Viewer.app"
-   ```
+Installation en une ligne — colle dans le Terminal, puis lance normalement depuis Applications :
+
+```bash
+curl -L https://github.com/NXStorm/nex-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-macos-arm64.tar.gz | tar xz -C /Applications
+```
+
+(Mac Intel : remplace `arm64` par `x64`.) Le téléchargement via `curl` évite entièrement la quarantaine du navigateur : pas d'alerte Gatekeeper, pas d'étape `xattr`.
+
+Si tu passes par le `.zip` téléchargé au navigateur, macOS le met en quarantaine (app non notarisée) : dézippe puis exécute une fois `xattr -cr "NEXUS GS Viewer.app"`.
+
+**Linux** (x64)
+
+```bash
+curl -L https://github.com/NXStorm/nex-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-linux-x64.tar.gz | tar xz
+"./NEXUS GS Viewer-linux-x64/nexus-gs-viewer"
+```
 
 ### Option 2 — Depuis les sources
 
@@ -162,6 +172,9 @@ Rend l'animation sauvegardée de la scène (ou une orbite automatique) puis quit
 | Le SPZ nettoyé a perdu ses reflets | Attendu : le nettoyage/bake reconstruit les splats sans harmoniques > 0 |
 | Édits perdus à la réouverture | Bakes et calques extraits ne sont pas dans le sidecar — exporte-les en `.spz`/`.ply` |
 | Le double-clic n'ouvre pas les fichiers | Lance l'app une fois manuellement — l'association s'enregistre au premier lancement |
+| macOS dit que l'app est « endommagée » | Quarantaine du zip navigateur — utilise l'installation `curl \| tar`, ou `xattr -cr "NEXUS GS Viewer.app"` une fois |
+| Linux : erreur « SUID sandbox helper » | `sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox` (dans le dossier de l'app), ou lance avec `--no-sandbox` |
+| Linux : l'export MP4 échoue | Certaines distros n'ont pas d'encodeur H.264 WebCodecs — exporte une séquence PNG |
 
 ## Licence
 

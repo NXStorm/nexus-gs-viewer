@@ -54,10 +54,32 @@ jobs:
         # Apple Silicon refuse de lancer un binaire sans signature valide ;
         # le repackaging invalide celle d'Electron → on re-signe ad hoc.
         run: codesign --force --deep --sign - "release/NEXUS GS Viewer-darwin-${{ matrix.arch }}/NEXUS GS Viewer.app"
-      - name: Zip (ditto preserves symlinks and permissions)
+      - name: Zip + tar.gz (ditto/tar preserve symlinks and permissions)
+        # Le tar.gz sert à l'installation en une ligne « curl | tar » : téléchargé
+        # hors navigateur, l'app n'est pas mise en quarantaine → pas de xattr.
         run: |
           cd "release/NEXUS GS Viewer-darwin-${{ matrix.arch }}"
           ditto -c -k --sequesterRsrc --keepParent "NEXUS GS Viewer.app" "../../NEXUS-GS-Viewer-macos-${{ matrix.arch }}.zip"
+          tar czf "../../NEXUS-GS-Viewer-macos-${{ matrix.arch }}.tar.gz" "NEXUS GS Viewer.app"
       - uses: softprops/action-gh-release@v2
         with:
-          files: NEXUS-GS-Viewer-macos-${{ matrix.arch }}.zip
+          files: |
+            NEXUS-GS-Viewer-macos-${{ matrix.arch }}.zip
+            NEXUS-GS-Viewer-macos-${{ matrix.arch }}.tar.gz
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: node scripts/package.mjs linux x64
+      - name: Tar
+        run: tar czf NEXUS-GS-Viewer-linux-x64.tar.gz -C release "NEXUS GS Viewer-linux-x64"
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: NEXUS-GS-Viewer-linux-x64.tar.gz

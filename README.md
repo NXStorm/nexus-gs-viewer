@@ -6,8 +6,8 @@
 
 **View, clean, animate and export Gaussian Splats — a playblast-ready splat editor built for VFX pipelines.**
 
-![Version](https://img.shields.io/badge/version-0.11.0-white)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-0078d4)
+![Version](https://img.shields.io/badge/version-0.12.0-white)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen)
@@ -24,7 +24,7 @@
 
 ## What it does
 
-**NEXUS GS Viewer** is a standalone Gaussian Splatting viewer **and editor** for Windows. Drop in a `.ply`, `.spz`, `.splat` or `.ksplat` scan and you get a fast, 60 fps viewer with Photoshop-style layers — plus the two things most splat viewers are missing:
+**NEXUS GS Viewer** is a standalone Gaussian Splatting viewer **and editor** for Windows, macOS and Linux. Drop in a `.ply`, `.spz`, `.splat` or `.ksplat` scan and you get a fast, 60 fps viewer with Photoshop-style layers — plus the two things most splat viewers are missing:
 
 - a **camera animation timeline** with a Blender-style camera frame, that exports **playblasts** (MP4, alpha PNG sequences) and **Nuke cameras** (`.chan`, both directions),
 - a full **cleanup toolset** — keep/erase shapes, an eraser brush, splat selection with cut/copy/paste to layers, and destructive baking — so a raw scan becomes a clean, re-exportable asset without leaving the app.
@@ -72,14 +72,24 @@ Gaussian Splat scans come out of training noisy — floaters, stray ground, blow
 
 On first launch the app registers itself (per-user, no admin rights): `.spz`, `.splat` and `.ksplat` open on double-click, and `.ply` gets an "Open with" entry.
 
-**macOS** (Apple Silicon: `macos-arm64` · Intel: `macos-x64`)
+**macOS** (Apple Silicon: `arm64` · Intel: `x64`)
 
-1. Download the matching `NEXUS-GS-Viewer-macos-*.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
-2. Unzip and move `NEXUS GS Viewer.app` to Applications
-3. First launch only — the app isn't notarized, so **right-click → Open → Open**, or run:
-   ```bash
-   xattr -cr "/Applications/NEXUS GS Viewer.app"
-   ```
+One-line install — paste in Terminal, then launch normally from Applications:
+
+```bash
+curl -L https://github.com/NXStorm/nex-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-macos-arm64.tar.gz | tar xz -C /Applications
+```
+
+(Intel Macs: replace `arm64` with `x64`.) Downloading with `curl` skips the browser quarantine entirely, so no Gatekeeper warning and no `xattr` step.
+
+If you download the `.zip` through a browser instead, macOS quarantines it (the app isn't notarized): unzip, then run `xattr -cr "NEXUS GS Viewer.app"` once.
+
+**Linux** (x64)
+
+```bash
+curl -L https://github.com/NXStorm/nex-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-linux-x64.tar.gz | tar xz
+"./NEXUS GS Viewer-linux-x64/nexus-gs-viewer"
+```
 
 ### Option 2 — From source
 
@@ -165,7 +175,7 @@ nex-gs-viewer/
 
 ## Requirements
 
-- Windows 10/11 or macOS 12+ (Apple Silicon & Intel), GPU with WebGL2 (tested up to 2M splats at 60 fps on an RTX 5090)
+- Windows 10/11, macOS 12+ (Apple Silicon & Intel) or Linux x64, GPU with WebGL2 (tested up to 2M splats at 60 fps on an RTX 5090)
 - Node.js 18+ **only if building from source**
 - No external dependencies, no account, no network access
 
@@ -179,14 +189,16 @@ nex-gs-viewer/
 | Cleaned SPZ lost view-dependent shading | Expected: cleanup/bake rebuilds splats without SH>0 harmonics |
 | Scene edits gone after reopening | Bakes and extracted layers aren't in the sidecar — export them as `.spz`/`.ply` to keep them |
 | Double-click doesn't open files | Launch the app once manually — associations register on first run |
-| macOS says the app is "damaged" | It's the unsigned-app quarantine: run `xattr -cr "NEXUS GS Viewer.app"` (Terminal), then open normally |
+| macOS says the app is "damaged" | Browser-downloaded zip quarantine — use the `curl \| tar` one-liner instead, or run `xattr -cr "NEXUS GS Viewer.app"` once |
+| Linux: "SUID sandbox helper" error | `sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox` (inside the app folder), or launch with `--no-sandbox` |
+| Linux: MP4 export fails | Some distros lack a WebCodecs H.264 encoder — export a PNG sequence instead |
 
 ## Roadmap
 
 - Attenuate/tint shape mode (dim instead of delete)
 - Motion blur (sub-frame accumulation) for playblasts
 - Exposure/gamma viewport grading
-- Signed/notarized macOS builds, Linux build
+- Signed/notarized macOS builds (removes the quarantine caveat for browser downloads)
 
 Have an idea? Open an issue or ping me on [LinkedIn](https://www.linkedin.com/in/patrick-crucke/).
 

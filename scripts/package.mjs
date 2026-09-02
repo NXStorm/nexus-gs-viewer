@@ -10,19 +10,25 @@ const stage = 'release/.stage'
 const platform = process.argv[2] || process.platform
 const arch = process.argv[3] || (platform === 'darwin' ? 'arm64' : 'x64')
 
-// Icône par plateforme : .ico Windows, .icns macOS (générée en CI via iconutil).
+// Icône par plateforme : .ico Windows, .icns macOS (générée en CI via
+// iconutil) ; sur Linux l'icône vient d'un .desktop, pas du binaire.
 const icon =
   platform === 'darwin'
     ? existsSync('build/icon.icns')
       ? `${root}/build/icon.icns`
       : null
-    : `${root}/build/icon.ico`
+    : platform === 'win32'
+      ? `${root}/build/icon.ico`
+      : null
 
-// Associations de fichiers macOS : déclarées dans l'Info.plist du bundle.
-const darwinExtras =
+// macOS : associations de fichiers via l'Info.plist du bundle.
+// Linux : nom de binaire sans espaces (plus agréable en terminal).
+const platformExtras =
   platform === 'darwin'
     ? ` --extend-info="${root}/build/mac-info.plist" --app-bundle-id=com.innoprodigious.nexgsviewer`
-    : ''
+    : platform === 'linux'
+      ? ' --executable-name=nexus-gs-viewer'
+      : ''
 
 rmSync(stage, { recursive: true, force: true })
 rmSync(`release/NEXUS GS Viewer-${platform}-${arch}`, { recursive: true, force: true })
@@ -31,7 +37,7 @@ cpSync('package.json', `${stage}/package.json`)
 cpSync('out', `${stage}/out`, { recursive: true })
 
 execSync(
-  `npx electron-packager . --platform=${platform} --arch=${arch} --out="${root}/release" --overwrite --asar --electron-version=33.4.11${icon ? ` --icon="${icon}"` : ''}${darwinExtras}`,
+  `npx electron-packager . --platform=${platform} --arch=${arch} --out="${root}/release" --overwrite --asar --electron-version=33.4.11${icon ? ` --icon="${icon}"` : ''}${platformExtras}`,
   { cwd: stage, stdio: 'inherit', shell: true }
 )
 

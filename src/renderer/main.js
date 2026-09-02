@@ -361,6 +361,8 @@ const I18N_FR = {
   images: 'images', 'Nuke camera exported —': 'Caméra Nuke exportée —',
   'focal': 'focale', 'Export cancelled': 'Export annulé',
   'Could not read the .chan file': 'Lecture du fichier .chan impossible',
+  'H.264 encoding is not available on this system — export a PNG sequence instead':
+    'Encodage H.264 indisponible sur ce système — exporte une séquence PNG à la place',
   '.chan file invalid (at least 2 frames expected)':
     'Fichier .chan invalide (au moins 2 frames attendues)',
   'Camera imported —': 'Caméra importée —', 'Linear curve': 'courbe Linéaire',
@@ -2749,7 +2751,15 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
         output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
         error: (err) => (encoderError = err)
       })
-      encoder.configure({ codec, width: w, height: h, bitrate, framerate: fps })
+      const cfg = { codec, width: w, height: h, bitrate, framerate: fps }
+      const support = await VideoEncoder.isConfigSupported(cfg).catch(() => null)
+      if (!support?.supported) {
+        // Typiquement Linux sans encodeur H.264 : la séquence PNG reste dispo.
+        throw new Error(
+          t('H.264 encoding is not available on this system — export a PNG sequence instead')
+        )
+      }
+      encoder.configure(cfg)
     }
     // Séquence : foo.png → foo.0001.png, foo.0002.png…
     const seqPath = (n) => filePath.replace(/\.png$/i, `.${String(n).padStart(4, '0')}.png`)
