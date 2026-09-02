@@ -66,7 +66,7 @@ Gaussian Splat scans come out of training noisy — floaters, stray ground, blow
 
 **Windows**
 
-1. Download the latest `NEXUS-GS-Viewer-win32-x64.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
+1. Download the latest `NEXUS-GS-Viewer-win32-x64.zip` from [**Releases**](https://github.com/NXStorm/nexus-gs-viewer/releases)
 2. Unzip anywhere (e.g. `C:\Tools\NEXUS GS Viewer\`)
 3. Run `NEXUS GS Viewer.exe`
 
@@ -77,7 +77,7 @@ On first launch the app registers itself (per-user, no admin rights): `.spz`, `.
 One-line install — paste in Terminal, then launch normally from Applications:
 
 ```bash
-curl -L https://github.com/NXStorm/nex-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-macos-arm64.tar.gz | tar xz -C /Applications
+curl -L https://github.com/NXStorm/nexus-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-macos-arm64.tar.gz | tar xz -C /Applications
 ```
 
 (Intel Macs: replace `arm64` with `x64`.) Downloading with `curl` skips the browser quarantine entirely, so no Gatekeeper warning and no `xattr` step.
@@ -87,14 +87,14 @@ If you download the `.zip` through a browser instead, macOS quarantines it (the 
 **Linux** (x64)
 
 ```bash
-curl -L https://github.com/NXStorm/nex-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-linux-x64.tar.gz | tar xz
+curl -L https://github.com/NXStorm/nexus-gs-viewer/releases/latest/download/NEXUS-GS-Viewer-linux-x64.tar.gz | tar xz
 "./NEXUS GS Viewer-linux-x64/nexus-gs-viewer"
 ```
 
 ### Option 2 — From source
 
 ```bash
-git clone https://github.com/NXStorm/nex-gs-viewer.git
+git clone https://github.com/NXStorm/nexus-gs-viewer.git
 cd nex-gs-viewer
 npm install
 npm start          # development
