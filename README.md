@@ -179,7 +179,7 @@ nex-gs-viewer/
 | Cleaned SPZ lost view-dependent shading | Expected: cleanup/bake rebuilds splats without SH>0 harmonics |
 | Scene edits gone after reopening | Bakes and extracted layers aren't in the sidecar — export them as `.spz`/`.ply` to keep them |
 | Double-click doesn't open files | Launch the app once manually — associations register on first run |
-| macOS says the app is "damaged" | It's the unsigned-app quarantine: right-click → Open, or `xattr -cr` on the .app |
+| macOS says the app is "damaged" | It's the unsigned-app quarantine: run `xattr -cr "NEX GS Viewer.app"` (Terminal), then open normally |
 
 ## Roadmap
 

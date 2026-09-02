@@ -50,6 +50,10 @@ jobs:
           cp icon.iconset/icon_256x256.png icon.iconset/icon_128x128@2x.png
           iconutil -c icns icon.iconset -o build/icon.icns
       - run: node scripts/package.mjs darwin ${{ matrix.arch }}
+      - name: Ad-hoc codesign
+        # Apple Silicon refuse de lancer un binaire sans signature valide ;
+        # le repackaging invalide celle d'Electron → on re-signe ad hoc.
+        run: codesign --force --deep --sign - "release/NEX GS Viewer-darwin-${{ matrix.arch }}/NEX GS Viewer.app"
       - name: Zip (ditto preserves symlinks and permissions)
         run: |
           cd "release/NEX GS Viewer-darwin-${{ matrix.arch }}"
