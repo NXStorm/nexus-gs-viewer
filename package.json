@@ -1,7 +1,7 @@
 {
   "name": "nexus-gs-viewer",
   "productName": "NEXUS GS Viewer",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "NEXUS GS Viewer — Gaussian Splatting viewer and editor: playblasts, Nuke camera round-trip, cleanup tools",
   "main": "./out/main/index.js",
   "author": "innoprodigious",

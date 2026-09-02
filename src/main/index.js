@@ -77,13 +77,16 @@ function cliRenderOpts(argv) {
   return opts
 }
 
-// Pont Nuke : « exe scene.ply --roundtrip sortie.ply » affiche un bouton
-// « → Nuke » qui exporte la scène nettoyée vers ce chemin.
-function roundtripFromArgv(argv) {
+// Pont Nuke : lecture d'un flag « --nom valeur » dans argv.
+function flagFromArgv(argv, flag) {
   const args = argv.slice(app.isPackaged ? 1 : 2)
-  const i = args.indexOf('--roundtrip')
+  const i = args.indexOf(flag)
   return i !== -1 && args[i + 1] ? args[i + 1] : null
 }
+
+// « exe scene.ply --roundtrip sortie.ply » affiche un bouton « → Nuke » qui
+// exporte la scène nettoyée (+ caméra .chan si un plan est bloqué) vers ce chemin.
+const roundtripFromArgv = (argv) => flagFromArgv(argv, '--roundtrip')
 
 function splatPathFromArgv(argv) {
   // Packagé : argv = [exe, ...args] ; dev : argv = [electron, projet, ...args]
@@ -338,6 +341,17 @@ function createWindow() {
     setTimeout(() => mainWindow.webContents.send('debug:video', cliRender), 7000)
   }
 
+  // Pont Nuke : « --chan cam.chan [--fps N] » importe une caméra Nuke sur la
+  // timeline une fois la scène chargée.
+  const chanImport = flagFromArgv(process.argv, '--chan')
+  if (chanImport) {
+    const fps = Number(flagFromArgv(process.argv, '--fps')) || undefined
+    setTimeout(
+      () => mainWindow.webContents.send('debug:chanimport', { path: chanImport, fps }),
+      6500
+    )
+  }
+
   // Pont Nuke : transmet le chemin de retour au renderer une fois chargé.
   const roundtrip = roundtripFromArgv(process.argv)
   if (roundtrip) {
@@ -408,9 +422,16 @@ if (!gotLock) {
     mainWindow.focus()
     const p = splatPathFromArgv(argv)
     if (p) sendFileToRenderer(p)
-    // Relance depuis Nuke alors que l'app tourne déjà : met à jour le retour.
+    // Relance depuis Nuke alors que l'app tourne déjà : met à jour le retour
+    // et importe la caméra éventuelle.
     const rt = roundtripFromArgv(argv)
     if (rt) mainWindow.webContents.send('bridge:roundtrip', rt)
+    const ch = flagFromArgv(argv, '--chan')
+    if (ch) {
+      const fps = Number(flagFromArgv(argv, '--fps')) || undefined
+      const delay = p ? 6500 : 500 // laisse charger le fichier éventuel
+      setTimeout(() => mainWindow.webContents.send('debug:chanimport', { path: ch, fps }), delay)
+    }
   })
 
   // macOS : le Finder livre les fichiers via l'événement open-file (pas argv).

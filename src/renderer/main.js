@@ -2072,8 +2072,16 @@ let roundtripPath = null
 async function sendToNuke() {
   if (!roundtripPath) return
   await exportFile(roundtripPath)
-  console.log(`[roundtrip] OK — ${roundtripPath}`)
-  showToast(`${t('Sent to Nuke —')} ${baseName(roundtripPath)}`, 6000)
+  // S'il y a un plan bloqué, la caméra part avec la géométrie (.chan à côté).
+  let extra = ''
+  if (anim.keys.length >= 2) {
+    const chanPath = roundtripPath.replace(/\.[^.]+$/, '') + '.chan'
+    const fps = Number(tlFps.value) || 30
+    await exportChan(chanPath, fps, Math.max(Math.round(anim.duration * fps), 1))
+    extra = ' + .chan'
+  }
+  console.log(`[roundtrip] OK — ${roundtripPath}${extra}`)
+  showToast(`${t('Sent to Nuke —')} ${baseName(roundtripPath)}${extra}`, 6000)
 }
 
 window.api.onRoundtrip?.((p) => {
@@ -2883,7 +2891,7 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
 }
 
 // --- Import caméra Nuke .chan : une clé par frame, courbe Linéaire ---------
-async function importChan(forcedPath = null) {
+async function importChan(forcedPath = null, forcedFps = null) {
   const filePath =
     forcedPath ||
     (await window.api.pickFile({
@@ -2910,7 +2918,10 @@ async function importChan(forcedPath = null) {
     return
   }
   const before = { keys: [...anim.keys], duration: anim.duration, curve: anim.curve }
-  const fps = Number(tlFps.value) || 24
+  const fps = forcedFps || Number(tlFps.value) || 24
+  if (forcedFps && [...tlFps.options].some((o) => Number(o.value) === forcedFps)) {
+    tlFps.value = String(forcedFps)
+  }
   const d2r = THREE.MathUtils.degToRad
   const e = new THREE.Euler()
   const f0 = rows[0][0]
@@ -2954,7 +2965,10 @@ async function importChan(forcedPath = null) {
   console.log(`[chanimp] OK — ${baseName(filePath)} ${rows.length} frames`)
 }
 $('tl-import').addEventListener('click', () => importChan())
-window.api.onTestChanImport?.((p) => importChan(p))
+window.api.onTestChanImport?.((p) => {
+  const opts = typeof p === 'string' ? { path: p } : p
+  importChan(opts.path, opts.fps)
+})
 
 // Orbite automatique de 5 clés autour de la scène chargée (tests + CLI sans
 // animation restaurée).
