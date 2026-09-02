@@ -6,8 +6,8 @@
 
 **Visionner, nettoyer, animer et exporter des Gaussian Splats — un éditeur de splats pensé playblast, taillé pour les pipelines VFX.**
 
-![Version](https://img.shields.io/badge/version-0.9.0-white)
-![Platform](https://img.shields.io/badge/plateforme-Windows%2010%2F11-0078d4)
+![Version](https://img.shields.io/badge/version-0.10.0-white)
+![Platform](https://img.shields.io/badge/plateforme-Windows%20%7C%20macOS-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/licence-MIT-green)
 
@@ -63,11 +63,22 @@ Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol 
 
 ### Option 1 — Build release (recommandé)
 
+**Windows**
+
 1. Télécharge le dernier `NEX-GS-Viewer-win32-x64.zip` dans les [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
 2. Dézippe où tu veux (ex. `C:\Outils\NEX GS Viewer\`)
 3. Lance `NEX GS Viewer.exe`
 
 Au premier lancement, l'app s'enregistre (par utilisateur, sans droits admin) : `.spz`, `.splat` et `.ksplat` s'ouvrent au double-clic, et `.ply` reçoit une entrée « Ouvrir avec ».
+
+**macOS** (Apple Silicon : `macos-arm64` · Intel : `macos-x64`)
+
+1. Télécharge le `NEX-GS-Viewer-macos-*.zip` correspondant dans les [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
+2. Dézippe et glisse `NEX GS Viewer.app` dans Applications
+3. Premier lancement uniquement — l'app n'est pas notarisée : **clic droit → Ouvrir → Ouvrir**, ou :
+   ```bash
+   xattr -cr "/Applications/NEX GS Viewer.app"
+   ```
 
 ### Option 2 — Depuis les sources
 

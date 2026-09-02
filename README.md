@@ -6,8 +6,8 @@
 
 **View, clean, animate and export Gaussian Splats — a playblast-ready splat editor built for VFX pipelines.**
 
-![Version](https://img.shields.io/badge/version-0.9.0-white)
-![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4)
+![Version](https://img.shields.io/badge/version-0.10.0-white)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![PRs](https://img.shields.io/badge/PRs-welcome-brightgreen)
@@ -64,11 +64,22 @@ Gaussian Splat scans come out of training noisy — floaters, stray ground, blow
 
 ### Option 1 — Release build (recommended)
 
+**Windows**
+
 1. Download the latest `NEX-GS-Viewer-win32-x64.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
 2. Unzip anywhere (e.g. `C:\Tools\NEX GS Viewer\`)
 3. Run `NEX GS Viewer.exe`
 
 On first launch the app registers itself (per-user, no admin rights): `.spz`, `.splat` and `.ksplat` open on double-click, and `.ply` gets an "Open with" entry.
+
+**macOS** (Apple Silicon: `macos-arm64` · Intel: `macos-x64`)
+
+1. Download the matching `NEX-GS-Viewer-macos-*.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
+2. Unzip and move `NEX GS Viewer.app` to Applications
+3. First launch only — the app isn't notarized, so **right-click → Open → Open**, or run:
+   ```bash
+   xattr -cr "/Applications/NEX GS Viewer.app"
+   ```
 
 ### Option 2 — From source
 
@@ -154,7 +165,7 @@ nex-gs-viewer/
 
 ## Requirements
 
-- Windows 10/11, GPU with WebGL2 (any modern card; tested up to 2M splats at 60 fps on an RTX 5090)
+- Windows 10/11 or macOS 12+ (Apple Silicon & Intel), GPU with WebGL2 (tested up to 2M splats at 60 fps on an RTX 5090)
 - Node.js 18+ **only if building from source**
 - No external dependencies, no account, no network access
 
@@ -168,13 +179,14 @@ nex-gs-viewer/
 | Cleaned SPZ lost view-dependent shading | Expected: cleanup/bake rebuilds splats without SH>0 harmonics |
 | Scene edits gone after reopening | Bakes and extracted layers aren't in the sidecar — export them as `.spz`/`.ply` to keep them |
 | Double-click doesn't open files | Launch the app once manually — associations register on first run |
+| macOS says the app is "damaged" | It's the unsigned-app quarantine: right-click → Open, or `xattr -cr` on the .app |
 
 ## Roadmap
 
 - Attenuate/tint shape mode (dim instead of delete)
 - Motion blur (sub-frame accumulation) for playblasts
 - Exposure/gamma viewport grading
-- macOS/Linux builds
+- Signed/notarized macOS builds, Linux build
 
 Have an idea? Open an issue or ping me on [LinkedIn](https://www.linkedin.com/in/patrick-crucke/).
 

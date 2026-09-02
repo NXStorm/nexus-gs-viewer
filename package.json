@@ -1,7 +1,7 @@
 {
   "name": "nex-gs-viewer",
   "productName": "NEX GS Viewer",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "NEX GS Viewer — Gaussian Splatting viewer and editor for Windows: playblasts, Nuke camera round-trip, cleanup tools",
   "main": "./out/main/index.js",
   "author": "innoprodigious",

@@ -390,8 +390,27 @@ if (!gotLock) {
     if (p) sendFileToRenderer(p)
   })
 
+  // macOS : le Finder livre les fichiers via l'événement open-file (pas argv).
+  app.on('open-file', (event, filePath) => {
+    event.preventDefault()
+    if (rendererReady && mainWindow) sendFileToRenderer(filePath)
+    else pendingPath = pendingPath ? `${pendingPath};${filePath}` : filePath
+  })
+
   app.whenReady().then(() => {
-    Menu.setApplicationMenu(null)
+    if (process.platform === 'darwin') {
+      // Menu minimal : Cmd+Q, copier/coller (indispensable pour les champs de
+      // renommage) et gestion des fenêtres.
+      Menu.setApplicationMenu(
+        Menu.buildFromTemplate([
+          { role: 'appMenu' },
+          { role: 'editMenu' },
+          { role: 'windowMenu' }
+        ])
+      )
+    } else {
+      Menu.setApplicationMenu(null)
+    }
     registerFileAssociations()
 
     // Fichier à ouvrir au démarrage : argument CLI, sinon variable de debug.
