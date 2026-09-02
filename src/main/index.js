@@ -267,7 +267,7 @@ function createWindow() {
     minWidth: 800,
     minHeight: 560,
     backgroundColor: '#050505',
-    title: 'NEX GS Viewer',
+    title: 'NEXUS GS Viewer',
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

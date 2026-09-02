@@ -21,10 +21,10 @@ jobs:
       - run: node scripts/package.mjs win32 x64
       - name: Zip
         shell: pwsh
-        run: Compress-Archive -Path "release/NEX GS Viewer-win32-x64" -DestinationPath "NEX-GS-Viewer-win32-x64.zip"
+        run: Compress-Archive -Path "release/NEXUS GS Viewer-win32-x64" -DestinationPath "NEXUS-GS-Viewer-win32-x64.zip"
       - uses: softprops/action-gh-release@v2
         with:
-          files: NEX-GS-Viewer-win32-x64.zip
+          files: NEXUS-GS-Viewer-win32-x64.zip
 
   macos:
     runs-on: macos-latest
@@ -53,11 +53,11 @@ jobs:
       - name: Ad-hoc codesign
         # Apple Silicon refuse de lancer un binaire sans signature valide ;
         # le repackaging invalide celle d'Electron → on re-signe ad hoc.
-        run: codesign --force --deep --sign - "release/NEX GS Viewer-darwin-${{ matrix.arch }}/NEX GS Viewer.app"
+        run: codesign --force --deep --sign - "release/NEXUS GS Viewer-darwin-${{ matrix.arch }}/NEXUS GS Viewer.app"
       - name: Zip (ditto preserves symlinks and permissions)
         run: |
-          cd "release/NEX GS Viewer-darwin-${{ matrix.arch }}"
-          ditto -c -k --sequesterRsrc --keepParent "NEX GS Viewer.app" "../../NEX-GS-Viewer-macos-${{ matrix.arch }}.zip"
+          cd "release/NEXUS GS Viewer-darwin-${{ matrix.arch }}"
+          ditto -c -k --sequesterRsrc --keepParent "NEXUS GS Viewer.app" "../../NEXUS-GS-Viewer-macos-${{ matrix.arch }}.zip"
       - uses: softprops/action-gh-release@v2
         with:
-          files: NEX-GS-Viewer-macos-${{ matrix.arch }}.zip
+          files: NEXUS-GS-Viewer-macos-${{ matrix.arch }}.zip

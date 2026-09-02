@@ -1,4 +1,4 @@
-// Packages the app into release/NEX GS Viewer-<platform>-<arch>.
+// Packages the app into release/NEXUS GS Viewer-<platform>-<arch>.
 // Usage: node scripts/package.mjs [platform] [arch]   (defaults: current OS, x64/arm64)
 // Uses a clean staging directory (out/ + package.json only) so the shipped
 // app.asar stays small — runtime dependencies are already bundled by Vite.
@@ -25,7 +25,7 @@ const darwinExtras =
     : ''
 
 rmSync(stage, { recursive: true, force: true })
-rmSync(`release/NEX GS Viewer-${platform}-${arch}`, { recursive: true, force: true })
+rmSync(`release/NEXUS GS Viewer-${platform}-${arch}`, { recursive: true, force: true })
 mkdirSync(stage, { recursive: true })
 cpSync('package.json', `${stage}/package.json`)
 cpSync('out', `${stage}/out`, { recursive: true })
@@ -36,4 +36,4 @@ execSync(
 )
 
 rmSync(stage, { recursive: true, force: true })
-console.log(`Packaged -> release/NEX GS Viewer-${platform}-${arch}`)
+console.log(`Packaged -> release/NEXUS GS Viewer-${platform}-${arch}`)

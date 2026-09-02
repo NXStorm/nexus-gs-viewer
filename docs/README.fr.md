@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="logo.png" alt="NEX GS Viewer" width="96" />
+<img src="logo.png" alt="NEXUS GS Viewer" width="96" />
 
-# NEX GS Viewer
+# NEXUS GS Viewer
 
 **Visionner, nettoyer, animer et exporter des Gaussian Splats — un éditeur de splats pensé playblast, taillé pour les pipelines VFX.**
 
-![Version](https://img.shields.io/badge/version-0.10.0-white)
+![Version](https://img.shields.io/badge/version-0.11.0-white)
 ![Platform](https://img.shields.io/badge/plateforme-Windows%20%7C%20macOS-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/licence-MIT-green)
@@ -15,7 +15,7 @@
 
 📬 Je construis des outils de pipeline IA × VFX. Suis les sorties et les breakdowns → [Patrick Crucke sur LinkedIn](https://www.linkedin.com/in/patrick-crucke/)
 
-<img src="hero.gif" alt="Démo NEX GS Viewer — playblast d'une scène de 2M de splats" width="800" />
+<img src="hero.gif" alt="Démo NEXUS GS Viewer — playblast d'une scène de 2M de splats" width="800" />
 
 </div>
 
@@ -23,7 +23,7 @@
 
 ## Ce que ça fait
 
-**NEX GS Viewer** est une visionneuse **et un éditeur** de Gaussian Splatting autonome pour Windows. Glisse un `.ply`, `.spz`, `.splat` ou `.ksplat` et tu obtiens un viewer fluide à 60 fps avec des calques façon Photoshop — plus les deux choses qui manquent à la plupart des viewers de splats :
+**NEXUS GS Viewer** est une visionneuse **et un éditeur** de Gaussian Splatting autonome pour Windows. Glisse un `.ply`, `.spz`, `.splat` ou `.ksplat` et tu obtiens un viewer fluide à 60 fps avec des calques façon Photoshop — plus les deux choses qui manquent à la plupart des viewers de splats :
 
 - une **timeline d'animation caméra** avec cadre caméra façon Blender, qui exporte des **playblasts** (MP4, séquences PNG alpha) et des **caméras Nuke** (`.chan`, dans les deux sens),
 - une **panoplie de nettoyage** complète — formes Garder/Effacer, pinceau gomme, sélection de splats avec couper/copier/coller vers des calques, bake destructif — pour transformer un scan brut en asset propre et ré-exportable sans quitter l'app.
@@ -32,7 +32,7 @@ C'est le pont manquant entre les outils d'entraînement de splats et ton pipelin
 
 ## Pourquoi c'est utile
 
-Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol parasite, bords cramés — et les reviewer se résume souvent à filmer son écran. Avec NEX GS Viewer, l'outil qui nettoie le scan est aussi celui qui bloque le plan : pose des clés caméra comme dans un DCC, exporte un playblast 1080p/4K avec timecode incrusté, donne la caméra `.chan` correspondante à Nuke, et compose directement la séquence PNG alpha. Un scan passe d'*entraîné* à *dans le comp* en quelques minutes.
+Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol parasite, bords cramés — et les reviewer se résume souvent à filmer son écran. Avec NEXUS GS Viewer, l'outil qui nettoie le scan est aussi celui qui bloque le plan : pose des clés caméra comme dans un DCC, exporte un playblast 1080p/4K avec timecode incrusté, donne la caméra `.chan` correspondante à Nuke, et compose directement la séquence PNG alpha. Un scan passe d'*entraîné* à *dans le comp* en quelques minutes.
 
 ## Fonctionnalités
 
@@ -65,19 +65,19 @@ Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol 
 
 **Windows**
 
-1. Télécharge le dernier `NEX-GS-Viewer-win32-x64.zip` dans les [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
-2. Dézippe où tu veux (ex. `C:\Outils\NEX GS Viewer\`)
-3. Lance `NEX GS Viewer.exe`
+1. Télécharge le dernier `NEXUS-GS-Viewer-win32-x64.zip` dans les [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
+2. Dézippe où tu veux (ex. `C:\Outils\NEXUS GS Viewer\`)
+3. Lance `NEXUS GS Viewer.exe`
 
 Au premier lancement, l'app s'enregistre (par utilisateur, sans droits admin) : `.spz`, `.splat` et `.ksplat` s'ouvrent au double-clic, et `.ply` reçoit une entrée « Ouvrir avec ».
 
 **macOS** (Apple Silicon : `macos-arm64` · Intel : `macos-x64`)
 
-1. Télécharge le `NEX-GS-Viewer-macos-*.zip` correspondant dans les [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
-2. Dézippe et glisse `NEX GS Viewer.app` dans Applications
+1. Télécharge le `NEXUS-GS-Viewer-macos-*.zip` correspondant dans les [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
+2. Dézippe et glisse `NEXUS GS Viewer.app` dans Applications
 3. Premier lancement uniquement — l'app n'est pas notarisée : **clic droit → Ouvrir → Ouvrir**, ou :
    ```bash
-   xattr -cr "/Applications/NEX GS Viewer.app"
+   xattr -cr "/Applications/NEXUS GS Viewer.app"
    ```
 
 ### Option 2 — Depuis les sources
@@ -87,7 +87,7 @@ git clone https://github.com/NXStorm/nex-gs-viewer.git
 cd nex-gs-viewer
 npm install
 npm start          # développement
-npm run package    # construit release/NEX GS Viewer-win32-x64/
+npm run package    # construit release/NEXUS GS Viewer-win32-x64/
 ```
 
 Nécessite Node.js 18+.
@@ -128,7 +128,7 @@ Nécessite Node.js 18+.
 ### CLI headless
 
 ```bash
-"NEX GS Viewer.exe" scene.ply --render out.mp4 --res 3840x2160 --fps 30
+"NEXUS GS Viewer.exe" scene.ply --render out.mp4 --res 3840x2160 --fps 30
 ```
 
 Rend l'animation sauvegardée de la scène (ou une orbite automatique) puis quitte. `out` peut être `.mp4`, `.png` (séquence) ou `.chan`.

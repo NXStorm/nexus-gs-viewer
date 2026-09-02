@@ -327,7 +327,7 @@ const I18N_FR = {
   'Export the camera view — MP4, PNG sequence or Nuke .chan camera (type chosen in the save dialog)':
     "Exporter la vue caméra — MP4, séquence PNG ou caméra Nuke .chan (type choisi dans le dialogue d'enregistrement)",
   // HUD / dropzone / overlays
-  'No file': 'Aucun fichier', 'GS Viewer — AI R&D': 'GS Viewer — R&D IA',
+  'No file': 'Aucun fichier',
   'Drop a splat file here': 'Glisse un fichier splat ici',
   'Open a file': 'Ouvrir un fichier', 'Recent files': 'Fichiers récents',
   'Loading…': 'Chargement…', 'Could not load the file': 'Impossible de charger le fichier',
@@ -2584,7 +2584,7 @@ function drawBurnin(ctx, w, h, i, totalFrames, fps, name) {
   const y = h - barH / 2
   const pad = Math.round(barH * 0.5)
   ctx.textAlign = 'left'
-  ctx.fillText(`NEX · ${name}`, pad, y)
+  ctx.fillText(`NEXUS · ${name}`, pad, y)
   const s = Math.floor(i / fps)
   const p2 = (n) => String(n).padStart(2, '0')
   const tc = `${p2(Math.floor(s / 3600))}:${p2(Math.floor(s / 60) % 60)}:${p2(s % 60)}:${p2(i % fps)}`

@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="docs/logo.png" alt="NEX GS Viewer" width="96" />
+<img src="docs/logo.png" alt="NEXUS GS Viewer" width="96" />
 
-# NEX GS Viewer
+# NEXUS GS Viewer
 
 **View, clean, animate and export Gaussian Splats — a playblast-ready splat editor built for VFX pipelines.**
 
-![Version](https://img.shields.io/badge/version-0.10.0-white)
+![Version](https://img.shields.io/badge/version-0.11.0-white)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -16,7 +16,7 @@
 
 📬 Building AI × VFX pipeline tools. Follow along and get new tools + breakdowns first → [Patrick Crucke on LinkedIn](https://www.linkedin.com/in/patrick-crucke/)
 
-<img src="docs/hero.gif" alt="NEX GS Viewer demo — 2M splat scene playblast" width="800" />
+<img src="docs/hero.gif" alt="NEXUS GS Viewer demo — 2M splat scene playblast" width="800" />
 
 </div>
 
@@ -24,7 +24,7 @@
 
 ## What it does
 
-**NEX GS Viewer** is a standalone Gaussian Splatting viewer **and editor** for Windows. Drop in a `.ply`, `.spz`, `.splat` or `.ksplat` scan and you get a fast, 60 fps viewer with Photoshop-style layers — plus the two things most splat viewers are missing:
+**NEXUS GS Viewer** is a standalone Gaussian Splatting viewer **and editor** for Windows. Drop in a `.ply`, `.spz`, `.splat` or `.ksplat` scan and you get a fast, 60 fps viewer with Photoshop-style layers — plus the two things most splat viewers are missing:
 
 - a **camera animation timeline** with a Blender-style camera frame, that exports **playblasts** (MP4, alpha PNG sequences) and **Nuke cameras** (`.chan`, both directions),
 - a full **cleanup toolset** — keep/erase shapes, an eraser brush, splat selection with cut/copy/paste to layers, and destructive baking — so a raw scan becomes a clean, re-exportable asset without leaving the app.
@@ -33,7 +33,7 @@ It's the missing bridge between splat training tools and your compositing pipeli
 
 ## Why it matters
 
-Gaussian Splat scans come out of training noisy — floaters, stray ground, blown-out edges — and reviewing them means screen-recording a viewport. With NEX GS Viewer, the same tool that cleans the scan also blocks the shot: set camera keys like in a DCC, export a 1080p/4K playblast with burn-in timecode, hand the matching `.chan` camera to Nuke, and composite the alpha PNG sequence directly. A scan goes from *trained* to *in the comp* in minutes.
+Gaussian Splat scans come out of training noisy — floaters, stray ground, blown-out edges — and reviewing them means screen-recording a viewport. With NEXUS GS Viewer, the same tool that cleans the scan also blocks the shot: set camera keys like in a DCC, export a 1080p/4K playblast with burn-in timecode, hand the matching `.chan` camera to Nuke, and composite the alpha PNG sequence directly. A scan goes from *trained* to *in the comp* in minutes.
 
 ## Features
 
@@ -66,19 +66,19 @@ Gaussian Splat scans come out of training noisy — floaters, stray ground, blow
 
 **Windows**
 
-1. Download the latest `NEX-GS-Viewer-win32-x64.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
-2. Unzip anywhere (e.g. `C:\Tools\NEX GS Viewer\`)
-3. Run `NEX GS Viewer.exe`
+1. Download the latest `NEXUS-GS-Viewer-win32-x64.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
+2. Unzip anywhere (e.g. `C:\Tools\NEXUS GS Viewer\`)
+3. Run `NEXUS GS Viewer.exe`
 
 On first launch the app registers itself (per-user, no admin rights): `.spz`, `.splat` and `.ksplat` open on double-click, and `.ply` gets an "Open with" entry.
 
 **macOS** (Apple Silicon: `macos-arm64` · Intel: `macos-x64`)
 
-1. Download the matching `NEX-GS-Viewer-macos-*.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
-2. Unzip and move `NEX GS Viewer.app` to Applications
+1. Download the matching `NEXUS-GS-Viewer-macos-*.zip` from [**Releases**](https://github.com/NXStorm/nex-gs-viewer/releases)
+2. Unzip and move `NEXUS GS Viewer.app` to Applications
 3. First launch only — the app isn't notarized, so **right-click → Open → Open**, or run:
    ```bash
-   xattr -cr "/Applications/NEX GS Viewer.app"
+   xattr -cr "/Applications/NEXUS GS Viewer.app"
    ```
 
 ### Option 2 — From source
@@ -88,7 +88,7 @@ git clone https://github.com/NXStorm/nex-gs-viewer.git
 cd nex-gs-viewer
 npm install
 npm start          # development
-npm run package    # builds release/NEX GS Viewer-win32-x64/
+npm run package    # builds release/NEXUS GS Viewer-win32-x64/
 ```
 
 Requires Node.js 18+.
@@ -129,7 +129,7 @@ Requires Node.js 18+.
 ### Headless CLI
 
 ```bash
-"NEX GS Viewer.exe" scene.ply --render out.mp4 --res 3840x2160 --fps 30
+"NEXUS GS Viewer.exe" scene.ply --render out.mp4 --res 3840x2160 --fps 30
 ```
 
 Renders the scene's saved animation (or an automatic orbit) and quits. `out` can be `.mp4`, `.png` (sequence) or `.chan`.
@@ -179,7 +179,7 @@ nex-gs-viewer/
 | Cleaned SPZ lost view-dependent shading | Expected: cleanup/bake rebuilds splats without SH>0 harmonics |
 | Scene edits gone after reopening | Bakes and extracted layers aren't in the sidecar — export them as `.spz`/`.ply` to keep them |
 | Double-click doesn't open files | Launch the app once manually — associations register on first run |
-| macOS says the app is "damaged" | It's the unsigned-app quarantine: run `xattr -cr "NEX GS Viewer.app"` (Terminal), then open normally |
+| macOS says the app is "damaged" | It's the unsigned-app quarantine: run `xattr -cr "NEXUS GS Viewer.app"` (Terminal), then open normally |
 
 ## Roadmap
 
@@ -192,7 +192,7 @@ Have an idea? Open an issue or ping me on [LinkedIn](https://www.linkedin.com/in
 
 ## Contributing
 
-PRs and issues welcome. If you clean up or previz a shot with NEX GS Viewer, I'd love to see it — tag me on [LinkedIn](https://www.linkedin.com/in/patrick-crucke/).
+PRs and issues welcome. If you clean up or previz a shot with NEXUS GS Viewer, I'd love to see it — tag me on [LinkedIn](https://www.linkedin.com/in/patrick-crucke/).
 
 ## License
 
@@ -217,6 +217,6 @@ If this project saved you time, a ⭐ on the repo goes a long way.
 
 <div align="center">
 
-*NEX GS Viewer. Open source VFX tooling, made with care.*
+*NEXUS GS Viewer. Open source VFX tooling, made with care.*
 
 </div>
