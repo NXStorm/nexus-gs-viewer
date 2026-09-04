@@ -132,7 +132,7 @@ Nécessite Node.js 18+.
 
 ### Aller-retour Nuke
 
-- **NEX → Nuke** : exporte le `.chan` depuis la timeline, importe-le sur un nœud Camera (ordre de rotation ZXY par défaut, focale calée sur la vaperture 18.672). La caméra matche le playblast frame par frame — compose directement la séquence PNG alpha.
+- **NEX → Nuke** : exporte le `.chan` depuis la timeline, importe-le sur un nœud Camera (ordre de rotation ZXY par défaut, focale pour l'ouverture horizontale par défaut de Nuke 24,576 mm — vérifié dans Nuke 17 avec le test du pont NEXUS 4D Viewer). La caméra matche le playblast frame par frame — compose directement la séquence PNG alpha.
 - **Nuke → NEX** : exporte une caméra trackée en `.chan` depuis Nuke, clique **⤓ Chan** dans la timeline (règle d'abord la cadence). Une clé par frame, courbe Linéaire, restitution exacte.
 
 ### CLI headless

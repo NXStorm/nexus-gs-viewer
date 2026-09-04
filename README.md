@@ -135,7 +135,7 @@ Requires Node.js 18+.
 
 ### Nuke round-trip
 
-- **NEX → Nuke**: export `.chan` from the timeline, import it on a Camera node (default ZXY rotation order, focal matches the default 18.672 vertical aperture). The camera matches the playblast frame-for-frame — composite the alpha PNG sequence directly.
+- **NEX → Nuke**: export `.chan` from the timeline, import it on a Camera node (default ZXY rotation order, focal for Nuke's default 24.576 mm horizontal aperture — verified inside Nuke 17 with the NEXUS 4D Viewer bridge test). The camera matches the playblast frame-for-frame — composite the alpha PNG sequence directly.
 - **Nuke → NEX**: export a tracked camera as `.chan` from Nuke, click **⤓ Chan** in the timeline (set the timeline fps first). One key per frame, Linear curve, exact replay.
 
 ### Headless CLI

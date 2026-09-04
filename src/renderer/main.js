@@ -2627,21 +2627,34 @@ function drawBurnin(ctx, w, h, i, totalFrames, fps, name) {
 }
 
 // Caméra Nuke .chan : une ligne par frame — « frame tx ty tz rx ry rz focale ».
-// Même repère main droite Y-haut que Nuke, rotations en degrés dans l'ordre
-// ZXY (défaut du nœud Camera), focale en mm pour la vaperture par défaut de
-// Nuke (18.672) et le FOV recadré du cadre caméra : la caméra importée
-// matche le playblast frame par frame.
+// Même repère main droite Y-haut que Nuke. Angles pour un nœud Camera en
+// rot_order ZXY : Nuke compose ZXY dans l'ordre inverse de three.js, donc on
+// écrit les Euler three.js 'YXZ' (vérifié dans Nuke 17 — le ZXY de three.js
+// donnait une erreur de quelques degrés). Focale en mm pour l'ouverture
+// HORIZONTALE par défaut de Nuke (24.576) et le FOV recadré du cadre caméra :
+// Nuke projette avec haperture et l'aspect du format, la caméra importée
+// matche donc le playblast sans toucher au nœud, quel que soit l'aspect.
+const NUKE_HAPERTURE = 24.576
+function chanFocal(vfovDeg, aspect) {
+  const hfov = 2 * Math.atan(Math.tan((vfovDeg * Math.PI) / 360) * aspect)
+  return NUKE_HAPERTURE / (2 * Math.tan(hfov / 2))
+}
+function vfovFromChanFocal(focal, aspect) {
+  const hfov = 2 * Math.atan(NUKE_HAPERTURE / (2 * focal))
+  return (2 * Math.atan(Math.tan(hfov / 2) / aspect) * 180) / Math.PI
+}
 async function exportChan(filePath, fps, totalFrames) {
   layoutCamframe()
   const frameFrac = Math.min(camframeRect.h / window.innerHeight, 1) || 1
   const vfov = (Math.atan(Math.tan((camera.fov * Math.PI) / 360) * frameFrac) * 360) / Math.PI
-  const focal = 18.672 / (2 * Math.tan((vfov * Math.PI) / 360))
+  const { w: ew, h: eh } = exportSize()
+  const focal = chanFocal(vfov, ew / eh)
   const e = new THREE.Euler()
   const deg = THREE.MathUtils.radToDeg
   const lines = []
   for (let i = 0; i < totalFrames; i++) {
     const s = sampleAnim(i / fps)
-    e.setFromQuaternion(s.quaternion, 'ZXY')
+    e.setFromQuaternion(s.quaternion, 'YXZ') // == Nuke rot_order ZXY
     lines.push(
       [
         i + 1,
@@ -2925,9 +2938,18 @@ async function importChan(forcedPath = null, forcedFps = null) {
   const d2r = THREE.MathUtils.degToRad
   const e = new THREE.Euler()
   const f0 = rows[0][0]
+  // Focale Nuke (haperture 24.576) → FOV vertical de l'export → FOV du viewport (cadre).
+  if (rows[0].length >= 8 && rows[0][7] > 0) {
+    layoutCamframe()
+    const frameFrac = Math.min(camframeRect.h / window.innerHeight, 1) || 1
+    const { w: ew, h: eh } = exportSize()
+    const vfovExport = vfovFromChanFocal(rows[0][7], ew / eh)
+    camera.fov = (2 * Math.atan(Math.tan((vfovExport * Math.PI) / 360) / frameFrac) * 180) / Math.PI
+    camera.updateProjectionMatrix()
+  }
   anim.keys.length = 0
   for (const r of rows) {
-    e.set(d2r(r[4]), d2r(r[5]), d2r(r[6]), 'ZXY')
+    e.set(d2r(r[4]), d2r(r[5]), d2r(r[6]), 'YXZ') // Nuke ZXY → three.js YXZ
     const q = new THREE.Quaternion().setFromEuler(e)
     const pos = new THREE.Vector3(r[1], r[2], r[3])
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(q)
