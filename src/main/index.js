@@ -284,7 +284,10 @@ function createWindow() {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: false,
+      // Exports / rendus CLI à pleine vitesse même fenêtre occultée (derrière Nuke,
+      // écran éteint) : sinon timers et rAF sont bridés à 1 Hz.
+      backgroundThrottling: false
     }
   })
 

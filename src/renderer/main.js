@@ -2819,7 +2819,7 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
       let settle = 0
       while ((spark.sorting || spark.sortDirty) && settle < 8) {
         await new Promise((r) =>
-          document.hidden ? setTimeout(r, 4) : requestAnimationFrame(r)
+          setTimeout(r, 4) /* pas de rAF : fenêtre occultée = rAF suspendu */
         )
         renderer.render(scene, camera)
         settle++
@@ -2853,7 +2853,7 @@ async function exportVideo(forcedPath = null, forcedOpts = null) {
       }
       setProgress(`${isSeq ? 'PNG' : 'MP4'} ${t('— Esc to cancel')}`, i + 1, totalFrames)
       // Laisse respirer l'UI et le tri des splats (worker Spark) entre les frames.
-      await new Promise((r) => (document.hidden ? setTimeout(r, 0) : requestAnimationFrame(r)))
+      await new Promise((r) => (setTimeout(r, 0)))
     }
     const secs = ((performance.now() - t0) / 1000).toFixed(1)
     if (isSeq) {
