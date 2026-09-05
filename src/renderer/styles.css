@@ -940,3 +940,45 @@ html, body {
   padding: 1px 6px;
   white-space: nowrap;
 }
+
+/* --- Popovers (récents, export) — même vocabulaire que NEXUS 4D Viewer --- */
+.popover {
+  position: absolute;
+  right: 8px;
+  bottom: calc(100% + 10px);
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  backdrop-filter: blur(10px);
+  z-index: 30;
+}
+.popover[hidden] { display: none; }
+.popover-top {
+  position: fixed;
+  top: 56px;
+  left: 16px;
+  right: auto;
+  bottom: auto;
+  width: 320px;
+  -webkit-app-region: no-drag;
+}
+.ex-btn { text-align: left; padding: 7px 10px; }
+#btn-video.active, #btn-recent.active {
+  background: #fff; border-color: #fff; color: #000; font-weight: 700;
+}
+.recent-list { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; }
+.recent-list li { margin: 0; }
+.recent-list button {
+  width: 100%; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--border);
+  padding: 7px 4px; color: var(--text); cursor: pointer; font-family: var(--font);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.recent-list button:hover { background: rgba(255, 255, 255, 0.06); }
+.recent-list .r-name { font-size: 12px; }
+.recent-list .r-path { font-family: var(--mono); font-size: 9px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 290px; }
+.recent-list .r-empty { font-size: 11px; color: var(--faint); padding: 6px 4px; }

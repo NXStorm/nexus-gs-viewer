@@ -245,7 +245,10 @@ const I18N_FR = {
   // Toolbar
   'Open…': 'Ouvrir…', Frame: 'Recadrer', Flip: 'Retourner', Grid: 'Grille',
   Move: 'Déplacer', Rotate: 'Pivoter', Scale: 'Échelle', Edit: 'Édition',
-  Export: 'Exporter', BG: 'Fond',
+  Export: 'Exporter', 'Export ▴': 'Exporter ▴', BG: 'Fond', 'Recent ▾': 'Récents ▾', 'Recently opened files': 'Fichiers ouverts récemment',
+  'No recent file': 'Aucun fichier récent', '▶ Playblast MP4': '▶ Playblast MP4', '▦ PNG sequence': '▦ Séquence PNG', '⤴ Nuke camera .chan': '⤴ Caméra Nuke .chan',
+  'H.264 playblast of the camera frame, whole animation': 'Playblast H.264 du cadre caméra, animation entière', 'Numbered PNG frames of the camera frame (alpha option in the settings)': 'Frames PNG numérotées du cadre caméra (option alpha dans les réglages)',
+  'Nuke camera: frame tx ty tz rx ry rz focal, ZXY order': 'Caméra Nuke : frame tx ty tz rx ry rz focale, ordre ZXY', 'Export the camera view — playblast MP4, PNG sequence or Nuke .chan camera': 'Exporter la vue caméra — playblast MP4, séquence PNG ou caméra Nuke .chan',
   'Frame the view (F)': 'Recadrer la vue (F)',
   'Flip upside down (X)': 'Retourner haut/bas (X)',
   'Ground grid + axes (V)': 'Grille de sol + axes (V)',
@@ -2576,9 +2579,51 @@ tlCurve.addEventListener('change', () => {
 
 // Panneau de réglages repliable (⚙ / touche S).
 const tlSettings = $('tl-settings')
-function toggleSettings() {
-  tlSettings.hidden = !tlSettings.hidden
-  $('tl-gear').classList.toggle('active', !tlSettings.hidden)
+const exportMenu = $('export-menu')
+const recentMenu = $('recent-menu')
+function closePopovers(except = null) {
+  for (const [el, btn] of [[tlSettings, 'tl-gear'], [exportMenu, 'btn-video'], [recentMenu, 'btn-recent']]) {
+    if (el === except) continue
+    el.hidden = true
+    $(btn).classList.remove('active')
+  }
+}
+function togglePopover(el, btnId) {
+  closePopovers(el)
+  el.hidden = !el.hidden
+  $(btnId).classList.toggle('active', !el.hidden)
+}
+function toggleSettings() { togglePopover(tlSettings, 'tl-gear') }
+function toggleExportMenu() { togglePopover(exportMenu, 'btn-video') }
+function toggleRecentMenu() { togglePopover(recentMenu, 'btn-recent'); if (!recentMenu.hidden) refreshRecents() }
+$('btn-recent').addEventListener('click', toggleRecentMenu)
+window.addEventListener('pointerdown', (e) => {
+  if (e.target.closest?.('.popover, #tl-gear, #btn-video, #btn-recent')) return
+  closePopovers()
+})
+// Export par type explicite : dialogue avec un seul filtre.
+const EXPORT_PRESETS = {
+  mp4: { name: 'MP4 video', ext: 'mp4', suffix: '_playblast' },
+  png: { name: 'PNG image sequence', ext: 'png', suffix: '_seq' },
+  chan: { name: 'Nuke camera (.chan)', ext: 'chan', suffix: '_cam' }
+}
+async function exportAs(kind) {
+  const preset = EXPORT_PRESETS[kind]
+  if (!preset || exporting) return
+  if (anim.keys.length < 2) {
+    showToast(t('Set at least 2 camera keys (K) before exporting'))
+    return
+  }
+  const stem = (activeLayer?.name || 'scene').replace(/\.[^.]+$/, '')
+  const filePath = await window.api.saveAs({
+    title: t('Save'),
+    defaultName: `${stem}${preset.suffix}.${preset.ext}`,
+    filters: [{ name: t(preset.name), extensions: [preset.ext] }]
+  })
+  if (filePath) await exportVideo(filePath)
+}
+for (const b of exportMenu.querySelectorAll('.ex-btn')) {
+  b.addEventListener('click', () => { closePopovers(); exportAs(b.dataset.export) })
 }
 $('tl-gear').addEventListener('click', toggleSettings)
 
@@ -2589,7 +2634,7 @@ $('tl-rewind').addEventListener('click', () => {
   if (!anim.playing) settleControls()
 })
 $('tl-addkey').addEventListener('click', addKeyframe)
-$('btn-video').addEventListener('click', () => exportVideo())
+$('btn-video').addEventListener('click', toggleExportMenu)
 
 renderTicks()
 updatePlayhead()
@@ -3292,23 +3337,30 @@ async function openPath(filePath) {
 }
 
 function renderRecents(list) {
-  recentsList.textContent = ''
   recentsBox.hidden = !list || list.length === 0
-  if (recentsBox.hidden) return
-  for (const r of list) {
-    const li = document.createElement('li')
-    const btn = document.createElement('button')
-    btn.title = r.path
-    const name = document.createElement('span')
-    name.className = 'r-name'
-    name.textContent = r.name
-    const path = document.createElement('span')
-    path.className = 'r-path'
-    path.textContent = r.path
-    btn.append(name, path)
-    btn.addEventListener('click', () => openPath(r.path))
-    li.appendChild(btn)
-    recentsList.appendChild(li)
+  for (const ul of [recentsList, $('recent-list')]) {
+    ul.textContent = ''
+    for (const r of list || []) {
+      const li = document.createElement('li')
+      const btn = document.createElement('button')
+      btn.title = r.path
+      const name = document.createElement('span')
+      name.className = 'r-name'
+      name.textContent = r.name
+      const path = document.createElement('span')
+      path.className = 'r-path'
+      path.textContent = r.path
+      btn.append(name, path)
+      btn.addEventListener('click', () => { closePopovers(); openPath(r.path) })
+      li.appendChild(btn)
+      ul.appendChild(li)
+    }
+    if (!ul.children.length && ul !== recentsList) {
+      const li = document.createElement('li')
+      li.className = 'r-empty'
+      li.textContent = t('No recent file')
+      ul.appendChild(li)
+    }
   }
 }
 

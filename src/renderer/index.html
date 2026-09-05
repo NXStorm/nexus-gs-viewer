@@ -22,6 +22,11 @@
       </div>
       <div class="spacer"></div>
       <button id="btn-open" class="btn primary" data-i18n>Open…</button>
+      <button id="btn-recent" class="btn" title="Recently opened files" data-i18n>Recent ▾</button>
+      <div id="recent-menu" class="popover popover-top" hidden>
+        <div class="ts-title" data-i18n>Recent files</div>
+        <ul id="recent-list" class="recent-list"></ul>
+      </div>
       <button id="btn-reset" class="btn" title="Frame the view (F)" data-i18n>Frame</button>
       <button id="btn-flip" class="btn" title="Flip upside down (X)" data-i18n>Flip</button>
       <button id="btn-grid" class="btn" title="Ground grid + axes (V)" data-i18n>Grid</button>
@@ -210,7 +215,13 @@
           <input id="tl-alpha" type="checkbox" />
         </label>
       </div>
-      <button id="btn-video" class="btn primary tl-btn" title="Export the camera view — MP4, PNG sequence or Nuke .chan camera (type chosen in the save dialog)" data-i18n>Export</button>
+      <div id="export-menu" class="popover" hidden>
+        <div class="ts-title" data-i18n>Export</div>
+        <button class="btn ex-btn" data-export="mp4" title="H.264 playblast of the camera frame, whole animation" data-i18n>▶ Playblast MP4</button>
+        <button class="btn ex-btn" data-export="png" title="Numbered PNG frames of the camera frame (alpha option in the settings)" data-i18n>▦ PNG sequence</button>
+        <button class="btn ex-btn" data-export="chan" title="Nuke camera: frame tx ty tz rx ry rz focal, ZXY order" data-i18n>⤴ Nuke camera .chan</button>
+      </div>
+      <button id="btn-video" class="btn primary tl-btn" title="Export the camera view — playblast MP4, PNG sequence or Nuke .chan camera" data-i18n>Export ▴</button>
     </div>
 
     <!-- Transient notification -->
