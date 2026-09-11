@@ -132,6 +132,8 @@ Nécessite Node.js 18+.
 4. Avec une sélection : **Extraire** (couper vers un calque), **Dupliquer** (copier vers un calque) ou **Supprimer** — le nouveau calque se déplace au gizmo
 5. **Appliquer les édits** grave tout destructivement (annulable) pour itérer ; **Exporter** écrit le `.spz`/`.ply` nettoyé
 
+> 🔗 **Vous construisez des mondes depuis une photo ?** [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) (photo → monde Marble + objets SAM 3D → caméra → rendu IA) ouvre ici son décor, ses objets et sa caméra d'un bouton, et le bouton **→ NEXUS Verse** renvoie les calques nettoyés — voir [Lien NEXUS Verse](#lien-nexus-verse). Le studio est un dépôt privé pour l'instant.
+
 ### Aller-retour Nuke
 
 - **NEX → Nuke** : exporte le `.chan` depuis la timeline, importe-le sur un nœud Camera (ordre de rotation ZXY par défaut, focale pour l'ouverture horizontale par défaut de Nuke 24,576 mm — vérifié dans Nuke 17 avec le test du pont NEXUS 4D Viewer). La caméra matche le playblast frame par frame — compose directement la séquence PNG alpha.
@@ -191,6 +193,12 @@ Rend l'animation sauvegardée de la scène (ou une orbite automatique) puis quit
 ## Licence
 
 Publié sous [licence MIT](../LICENSE). Libre d'utilisation, de modification et d'usage commercial.
+
+## La famille NEXUS
+
+- [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) — une photo → un décor Gaussian splat navigable (monde Marble ou relevé RGBD local), ses objets en couches 3D, des lumières, un mouvement de caméra, un MP4, puis un re-rendu IA (Kling, Seedance, Wan VACE) et un upscale. Lié dans les deux sens avec ce viewer.
+- [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — le nœud Nuke de l'aller-retour.
+- [**NEXUS 4D Viewer**](https://github.com/NXStorm/nexus-4d-viewer) — le viewer frère pour les scènes dynamiques (4DGS) (privé pour l’instant).
 
 ## Crédits
 

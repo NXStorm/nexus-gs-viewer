@@ -135,6 +135,8 @@ Requires Node.js 18+.
 
 > 🔌 **Working in Nuke?** Install [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — a NEXUS Edit node that opens your splat in the viewer and imports the cleaned result back as a GeoImport, one click each way.
 
+> 🔗 **Building worlds from a photo?** [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) (photo → Marble world + SAM 3D objects → camera → AI render) opens its set, objects and camera here with one button, and the **→ NEXUS Verse** button sends the cleaned layers back — see [NEXUS Verse link](#nexus-verse-link). The studio is a private repository for now.
+
 ### Nuke round-trip
 
 - **NEX → Nuke**: export `.chan` from the timeline, import it on a Camera node (default ZXY rotation order, focal for Nuke's default 24.576 mm horizontal aperture — verified inside Nuke 17 with the NEXUS 4D Viewer bridge test). The camera matches the playblast frame-for-frame — composite the alpha PNG sequence directly.
@@ -223,6 +225,12 @@ PRs and issues welcome. If you clean up or previz a shot with NEXUS GS Viewer, I
 ## License
 
 Released under the [MIT License](LICENSE). Free to use, modify, and ship in commercial work.
+
+## The NEXUS family
+
+- [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) — one photo → a navigable Gaussian-splat set (Marble world or local RGBD lift), its objects as 3D layers, lights, a camera move, an MP4, then an AI re-render (Kling, Seedance, Wan VACE) and an upscale. Linked both ways with this viewer.
+- [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — the Nuke node for the round-trip.
+- [**NEXUS 4D Viewer**](https://github.com/NXStorm/nexus-4d-viewer) — the sibling viewer for dynamic (4DGS) scenes (private for now).
 
 ## Credits
 
