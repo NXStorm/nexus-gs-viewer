@@ -88,13 +88,30 @@ function flagFromArgv(argv, flag) {
 // exporte la scène nettoyée (+ caméra .chan si un plan est bloqué) vers ce chemin.
 const roundtripFromArgv = (argv) => flagFromArgv(argv, '--roundtrip')
 
+// Pont NEXUS Verse : « exe --scene scene.nex.json --verse dossierRetour
+// [--verse-url http://127.0.0.1:8741/…] » ouvre une scène complète (calques,
+// transformations, caméra) et affiche « → NEXUS Verse », qui réexporte les
+// calques modifiés dans le dossier de retour puis prévient Verse par HTTP.
+const sceneFromArgv = (argv) => {
+  const s = flagFromArgv(argv, '--scene')
+  if (s && existsSync(s)) return s
+  const args = argv.slice(app.isPackaged ? 1 : 2)
+  return args.find((a) => a.toLowerCase().endsWith('.nex.json') && existsSync(a)) || null
+}
+const verseFromArgv = (argv) => {
+  const dir = flagFromArgv(argv, '--verse')
+  return dir ? { dir, url: flagFromArgv(argv, '--verse-url') } : null
+}
+
+const MESH_EXTS = ['.glb', '.gltf']
+
 function splatPathFromArgv(argv) {
   // Packagé : argv = [exe, ...args] ; dev : argv = [electron, projet, ...args]
   const args = argv.slice(app.isPackaged ? 1 : 2)
   return (
     args.find(
       (a) =>
-        SPLAT_EXTS.some((ext) => a.toLowerCase().endsWith(ext)) && existsSync(a)
+        [...SPLAT_EXTS, ...MESH_EXTS].some((ext) => a.toLowerCase().endsWith(ext)) && existsSync(a)
     ) || null
   )
 }
@@ -225,6 +242,22 @@ ipcMain.handle('file:closeWrite', (_e, id) => {
 
 ipcMain.handle('recents:get', () => loadRecents())
 
+// Pont NEXUS Verse : le renderer ne peut pas joindre 127.0.0.1 (CSP connect-src
+// 'self'), le process principal poste le manifeste de retour à sa place.
+ipcMain.handle('bridge:post', async (_e, { url, body }) => {
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20000)
+    })
+    return { ok: res.ok, status: res.status, text: (await res.text()).slice(0, 2000) }
+  } catch (err) {
+    return { ok: false, status: 0, text: err?.message || String(err) }
+  }
+})
+
 // Dialogue « Enregistrer sous » générique (captures, exports).
 ipcMain.handle('file:saveAs', async (_e, { title, defaultName, filters }) => {
   const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
@@ -304,6 +337,9 @@ function createWindow() {
     if (cliRender && /^\[(video|seq|chan)\]/.test(message)) {
       setTimeout(() => app.quit(), 500)
     }
+    if (process.env['SPLAT_TEST_VERSE'] && message.startsWith('[verse]')) {
+      setTimeout(() => app.quit(), 500)
+    }
   })
 
   mainWindow.webContents.on('did-finish-load', () => {
@@ -353,6 +389,20 @@ function createWindow() {
       () => mainWindow.webContents.send('debug:chanimport', { path: chanImport, fps }),
       6500
     )
+  }
+
+  // Pont NEXUS Verse : scène complète à ouvrir + dossier/URL de retour.
+  const sceneFile = sceneFromArgv(process.argv)
+  const verse = verseFromArgv(process.argv)
+  if (sceneFile || verse) {
+    mainWindow.webContents.on('did-finish-load', () => {
+      if (sceneFile) mainWindow.webContents.send('bridge:scene', sceneFile)
+      if (verse) mainWindow.webContents.send('bridge:verse', verse)
+    })
+    // Debug : SPLAT_TEST_VERSE=1 déclenche le retour vers Verse sans clic.
+    if (verse && process.env['SPLAT_TEST_VERSE']) {
+      setTimeout(() => mainWindow.webContents.send('bridge:do-verse'), Number(process.env['SPLAT_TEST_VERSE_DELAY']) || 9000)
+    }
   }
 
   // Pont Nuke : transmet le chemin de retour au renderer une fois chargé.
@@ -429,6 +479,11 @@ if (!gotLock) {
     // et importe la caméra éventuelle.
     const rt = roundtripFromArgv(argv)
     if (rt) mainWindow.webContents.send('bridge:roundtrip', rt)
+    // Relance depuis NEXUS Verse : remplace la scène ouverte par la nouvelle.
+    const sc = sceneFromArgv(argv)
+    if (sc) mainWindow.webContents.send('bridge:scene', sc)
+    const vs = verseFromArgv(argv)
+    if (vs) mainWindow.webContents.send('bridge:verse', vs)
     const ch = flagFromArgv(argv, '--chan')
     if (ch) {
       const fps = Number(flagFromArgv(argv, '--fps')) || undefined

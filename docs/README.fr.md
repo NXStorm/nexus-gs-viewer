@@ -6,7 +6,7 @@
 
 **Visionner, nettoyer, animer et exporter des Gaussian Splats — un éditeur de splats pensé playblast, taillé pour les pipelines VFX.**
 
-![Version](https://img.shields.io/badge/version-0.13.0-white)
+![Version](https://img.shields.io/badge/version-0.14.0-white)
 ![Platform](https://img.shields.io/badge/plateforme-Windows%20%7C%20macOS%20%7C%20Linux-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/licence-MIT-green)
@@ -41,6 +41,8 @@ Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol 
 - 🎬 **Timeline caméra** — clés avec amorti par clé, courbes Catmull-Rom, cadre caméra façon Blender avec guides de composition (tiers, zones safe)
 - 📼 **Export playblast** — MP4 (H.264) ou **séquence PNG avec alpha**, formats fixes 1080p/4K/Scope/vertical, timecode incrusté en option
 - 🎥 **Aller-retour caméra Nuke** — exporte la caméra animée en `.chan`, ou importe un `.chan` tracké depuis Nuke et rejoue-le sur les splats
+- 🔗 **Lien NEXUS Verse** — un projet Verse s'ouvre ici avec son monde, ses calques splat, ses objets (maillages de référence) et sa caméra ; **→ NEXUS Verse** renvoie les calques édités et Verse se met à jour en place
+- 🧊 **Maillages de référence** — les modèles GLB/glTF se chargent en calques éclairés et déplaçables à côté des splats (jamais exportés en splat)
 - 🧹 **Formes de nettoyage** — boîtes, sphères, cylindres et plans de coupe en mode **Garder** / **Effacer** / **Sélection**, bord doux, masquage SDF temps réel
 - 🖌️ **Pinceaux** — peins directement sur les splats pour effacer ou sélectionner (molette = rayon)
 - ✂️ **Opérations de sélection** — extraire (couper), dupliquer (copier/coller) ou supprimer la sélection ; les splats extraits deviennent un calque déplaçable
@@ -134,6 +136,16 @@ Nécessite Node.js 18+.
 
 - **NEX → Nuke** : exporte le `.chan` depuis la timeline, importe-le sur un nœud Camera (ordre de rotation ZXY par défaut, focale pour l'ouverture horizontale par défaut de Nuke 24,576 mm — vérifié dans Nuke 17 avec le test du pont NEXUS 4D Viewer). La caméra matche le playblast frame par frame — compose directement la séquence PNG alpha.
 - **Nuke → NEX** : exporte une caméra trackée en `.chan` depuis Nuke, clique **⤓ Chan** dans la timeline (règle d'abord la cadence). Une clé par frame, courbe Linéaire, restitution exacte.
+
+### Lien NEXUS Verse
+
+[NEXUS Verse](https://github.com/NXStorm/nexus-verse) transforme une photo en monde avec des objets 3D ; son bouton **↗ Open in NEXUS GS** ouvre ici les couches choisies — le monde et les calques splat en splats éditables, les objets en maillages de référence, la caméra du plan sur la timeline, la vue sur sa première clé. Nettoie, gomme, extrais, déplace, puis clique **→ NEXUS Verse** : chaque calque splat édité est réexporté dans son propre repère, et Verse remplace les fichiers, applique les déplacements, importe les sélections extraites en nouvelles couches et reprend la caméra. Le viewer est lancé ainsi :
+
+```bash
+"NEXUS GS Viewer.exe" --scene projet.nex.json --verse dossier_retour --verse-url http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return
+```
+
+`--scene` ouvre n'importe quel fichier de scène `.nex.json` seul (**Ouvrir…** les accepte aussi) ; `--verse` affiche le bouton de retour et `--verse-url` est appelée quand le retour est écrit — sans elle, ou Verse fermé, les fichiers attendent dans le dossier de retour et Verse les récupère à l'ouverture du projet. Les harmoniques sphériques d'ordre > 0 ne sont pas conservées dans les calques réexportés (limite de l'export de l'éditeur) ; les calques non touchés gardent leur fichier d'origine.
 
 ### CLI headless
 

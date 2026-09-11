@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { TransformControls } from 'three/addons/controls/TransformControls.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import {
   SparkRenderer,
   SplatMesh,
@@ -189,10 +190,13 @@ canvas.addEventListener('pointerup', (e) => {
 // ---------------------------------------------------------------------------
 // Calques : un par fichier importé (façon Photoshop). Le calque actif reçoit
 // le gizmo et les actions (retourner, etc.).
-const layers = [] // { id, name, filePath, mesh, visible }
+// Un calque est un splat (SplatMesh) ou, depuis NEXUS Verse, un maillage de
+// référence GLB (kind 'mesh' : visible, déplaçable, jamais exporté en splat).
+const layers = [] // { id, name, filePath, mesh, visible, kind?, ref? }
 let activeLayer = null
 let layerSeq = 0
-const visibleLayers = () => layers.filter((l) => l.visible)
+const visibleLayers = () => layers.filter((l) => l.visible && l.kind !== 'mesh')
+const isMeshLayer = (l) => l?.kind === 'mesh'
 
 // Limites de la scène en coordonnées monde (proximité caméra, cadrage).
 let sceneBox = null
@@ -202,11 +206,12 @@ let sceneRadius = 1
 function computeSceneBounds() {
   const box = new THREE.Box3()
   let any = false
-  for (const l of visibleLayers()) {
+  for (const l of layers.filter((x) => x.visible)) {
     try {
-      const b = l.mesh.getBoundingBox(true).clone()
       l.mesh.updateMatrixWorld(true)
-      b.applyMatrix4(l.mesh.matrixWorld)
+      const b = isMeshLayer(l)
+        ? new THREE.Box3().setFromObject(l.mesh)
+        : l.mesh.getBoundingBox(true).clone().applyMatrix4(l.mesh.matrixWorld)
       if (!b.isEmpty() && isFinite(b.min.x) && isFinite(b.max.x)) {
         box.union(b)
         any = true
@@ -352,6 +357,12 @@ const I18N_FR = {
   'Compressed SPZ': 'SPZ compressé', '3D Gaussian Splatting PLY': 'PLY 3D Gaussian Splatting',
   'Screenshot saved —': 'Capture enregistrée —', 'Exported —': 'Exporté —',
   'Sent to Nuke —': 'Envoyé vers Nuke —',
+  'Sent to NEXUS Verse —': 'Envoyé vers NEXUS Verse —', 'Saved for NEXUS Verse —': 'Enregistré pour NEXUS Verse —',
+  'Sending to NEXUS Verse…': 'Envoi vers NEXUS Verse…', 're-exported': 'réexportés',
+  'Verse will pick it up when the project is open': 'Verse le récupérera à l’ouverture du projet',
+  'Send the edited layers back to NEXUS Verse': 'Renvoyer les calques édités vers NEXUS Verse',
+  'Reference meshes': 'Maillages de référence', 'NEXUS scenes': 'Scènes NEXUS', 'Not a scene file:': 'Pas un fichier de scène :',
+  mesh: 'maillage', faces: 'faces',
   'Send the cleaned scene back to Nuke': 'Renvoyer la scène nettoyée vers Nuke',
   'No visible layer to export': 'Aucun calque visible à exporter',
   Layer: 'Calque', splats: 'splats', layers: 'calques', keys: 'clés', frames: 'frames',
@@ -2097,6 +2108,154 @@ $('btn-nuke').addEventListener('click', sendToNuke)
 window.api.onDoRoundtrip?.(sendToNuke) // debug headless
 
 // ---------------------------------------------------------------------------
+// Pont NEXUS Verse : lancé avec « --scene x.nex.json --verse dossier
+// [--verse-url url] », le bouton « → NEXUS Verse » réexporte chaque calque
+// splat modifié (nettoyage, pinceau, extraction, bake) dans son propre repère,
+// écrit un manifeste (transformations de tous les calques, calques nouveaux,
+// caméra) et prévient Verse, qui met ses couches à jour en place.
+// ---------------------------------------------------------------------------
+let verseBridge = null // { dir, url }
+
+// Un calque splat est réexporté quand ses données ont changé : baké (pinceau,
+// extraction, « Appliquer »), créé ici (sélection extraite) ou sous des formes
+// d'édition actives. Une simple transformation ne touche pas au fichier.
+function layerEdited(layer) {
+  if (isMeshLayer(layer)) return false
+  if (layer.baked || !layer.filePath) return true
+  return crop.active && crop.shapes.some((s) => s.visible && s.mode !== 'select')
+}
+
+// PLY 3DGS d'un seul calque, centres dans le repère du calque (la transformation
+// part à part dans le manifeste) ; les formes d'édition s'appliquent en monde.
+function exportLayerPly(layer) {
+  const SH_C0 = 0.28209479177387814
+  const mesh = layer.mesh
+  mesh.updateMatrixWorld(true)
+  const m = mesh.matrixWorld
+  const world = new THREE.Vector3()
+  let n = 0
+  mesh.forEachSplat((_i, center) => {
+    world.copy(center).applyMatrix4(m)
+    if (insideCrop(world)) n++
+  })
+  const props = [
+    'x', 'y', 'z', 'nx', 'ny', 'nz',
+    'f_dc_0', 'f_dc_1', 'f_dc_2', 'opacity',
+    'scale_0', 'scale_1', 'scale_2',
+    'rot_0', 'rot_1', 'rot_2', 'rot_3'
+  ]
+  let header = `ply\nformat binary_little_endian 1.0\nelement vertex ${n}\n`
+  for (const p of props) header += `property float ${p}\n`
+  header += 'end_header\n'
+  const headerBytes = new TextEncoder().encode(header)
+  const body = new DataView(new ArrayBuffer(n * props.length * 4))
+  const logit = (v) => {
+    const c = Math.min(Math.max(v, 1e-6), 1 - 1e-6)
+    return Math.log(c / (1 - c))
+  }
+  let off = 0
+  const w = (v) => {
+    body.setFloat32(off, v, true)
+    off += 4
+  }
+  mesh.forEachSplat((_i, center, scales, quat, opacity, color) => {
+    world.copy(center).applyMatrix4(m)
+    if (!insideCrop(world)) return
+    w(center.x); w(center.y); w(center.z)
+    w(0); w(0); w(0)
+    w((color.r - 0.5) / SH_C0); w((color.g - 0.5) / SH_C0); w((color.b - 0.5) / SH_C0)
+    w(logit(opacity))
+    w(Math.log(Math.max(scales.x, 1e-12)))
+    w(Math.log(Math.max(scales.y, 1e-12)))
+    w(Math.log(Math.max(scales.z, 1e-12)))
+    w(quat.w); w(quat.x); w(quat.y); w(quat.z)
+  })
+  const out = new Uint8Array(headerBytes.length + body.byteLength)
+  out.set(headerBytes, 0)
+  out.set(new Uint8Array(body.buffer), headerBytes.length)
+  return { bytes: out, count: n }
+}
+
+async function sendToVerse() {
+  if (!verseBridge) return
+  const dir = verseBridge.dir.replace(/[\\/]+$/, '')
+  const sep = dir.includes('\\') ? '\\' : '/'
+  showLoading(t('Sending to NEXUS Verse…'))
+  await new Promise((r) => setTimeout(r, 30))
+  try {
+    crop.root?.updateMatrixWorld(true)
+    const manifest = { version: 1, from: 'nexus-gs-viewer', at: Date.now(), layers: [] }
+    let fresh = 0
+    let exported = 0
+    for (const layer of layers) {
+      layer.mesh.updateMatrixWorld(true)
+      const rec = {
+        ref: layer.ref || null,
+        kind: isMeshLayer(layer) ? 'mesh' : 'splat',
+        name: layer.name,
+        visible: layer.visible,
+        position: layer.mesh.position.toArray(),
+        quaternion: layer.mesh.quaternion.toArray(),
+        scale: layer.mesh.scale.toArray()
+      }
+      if (layerEdited(layer)) {
+        const stem = layer.ref || `new_${++fresh}`
+        const srcSpz = /\.spz$/i.test(layer.filePath || '')
+        const { bytes, count } = exportLayerPly(layer)
+        let out = bytes
+        let ext = 'ply'
+        if (srcSpz) {
+          const { fileBytes } = await transcodeSpz({ inputs: [{ fileBytes: bytes, pathOrUrl: 'layer.ply' }] })
+          out = fileBytes
+          ext = 'spz'
+        }
+        rec.file = `${stem}.${ext}`
+        rec.splats = count
+        await window.api.writeFile(`${dir}${sep}${rec.file}`, out.buffer ?? out)
+        exported++
+      }
+      manifest.layers.push(rec)
+    }
+    manifest.anim = {
+      duration: anim.duration,
+      fps: Number(tlFps.value) || 30,
+      fov: frameVfov(),
+      keys: anim.keys.map((k) => ({ t: k.t, position: k.position.toArray(), quaternion: k.quaternion.toArray(), target: k.target.toArray() }))
+    }
+    await window.api.writeFile(`${dir}${sep}return.json`, new TextEncoder().encode(JSON.stringify(manifest)).buffer)
+    let note = `${manifest.layers.length} ${t('layers')}, ${exported} ${t('re-exported')}`
+    if (verseBridge.url) {
+      const res = await window.api.postJson(verseBridge.url, manifest)
+      if (res.ok) {
+        console.log(`[verse] OK — ${note}`)
+        showToast(`${t('Sent to NEXUS Verse —')} ${note}`, 6000)
+      } else {
+        console.log(`[verse] écrit, Verse injoignable (${res.status}: ${res.text})`)
+        showToast(`${t('Saved for NEXUS Verse —')} ${note} · ${t('Verse will pick it up when the project is open')}`, 8000)
+      }
+    } else {
+      console.log(`[verse] OK — ${note}`)
+      showToast(`${t('Saved for NEXUS Verse —')} ${note}`, 6000)
+    }
+  } catch (err) {
+    console.log(`[verse] ERREUR: ${err?.message || err}`)
+    showError(err)
+  } finally {
+    loading.hidden = true
+  }
+}
+
+window.api.onVerse?.((v) => {
+  verseBridge = v
+  const btn = $('btn-verse')
+  btn.hidden = false
+  btn.title = `${t('Send the edited layers back to NEXUS Verse')} (${v.dir})`
+})
+window.api.onScene?.((p) => openSceneFile(p).catch(showError))
+$('btn-verse').addEventListener('click', sendToVerse)
+window.api.onDoVerse?.(sendToVerse) // debug headless
+
+// ---------------------------------------------------------------------------
 // Timeline d'animation caméra + export MP4 (playblast)
 //
 // Chaque clé fige la pose caméra (position, orientation, cible d'orbite) à un
@@ -2680,6 +2839,20 @@ function drawBurnin(ctx, w, h, i, totalFrames, fps, name) {
 // Nuke projette avec haperture et l'aspect du format, la caméra importée
 // matche donc le playblast sans toucher au nœud, quel que soit l'aspect.
 const NUKE_HAPERTURE = 24.576
+// FOV vertical du cadre caméra (= de l'export), indépendant de la taille de la
+// fenêtre : c'est lui que les scènes .nex.json et NEXUS Verse échangent.
+function frameVfov() {
+  layoutCamframe()
+  const frameFrac = Math.min(camframeRect.h / window.innerHeight, 1) || 1
+  return (Math.atan(Math.tan((camera.fov * Math.PI) / 360) * frameFrac) * 360) / Math.PI
+}
+function setFrameVfov(vfov) {
+  if (!(vfov > 1 && vfov < 179)) return
+  layoutCamframe()
+  const frameFrac = Math.min(camframeRect.h / window.innerHeight, 1) || 1
+  camera.fov = (2 * Math.atan(Math.tan((vfov * Math.PI) / 360) / frameFrac) * 180) / Math.PI
+  camera.updateProjectionMatrix()
+}
 function chanFocal(vfovDeg, aspect) {
   const hfov = 2 * Math.atan(Math.tan((vfovDeg * Math.PI) / 360) * aspect)
   return NUKE_HAPERTURE / (2 * Math.tan(hfov / 2))
@@ -3105,8 +3278,12 @@ window.api.onTestVideo?.(async (payload) => {
 // ---------------------------------------------------------------------------
 let sceneSaveTimer = null
 let restoringScene = false
+// Scène ouverte explicitement (« --scene x.nex.json », NEXUS Verse) : la
+// sauvegarde retourne dans ce fichier plutôt qu'à côté du premier calque.
+let sceneFile = null
 
 function sceneSidecarPath() {
+  if (sceneFile) return sceneFile
   const primary = layers.find((l) => l.filePath)
   return primary ? primary.filePath + '.nex.json' : null
 }
@@ -3128,6 +3305,8 @@ async function saveScene() {
       .map((l) => ({
         path: l.filePath,
         name: l.name,
+        ...(l.kind ? { kind: l.kind } : {}),
+        ...(l.ref ? { ref: l.ref } : {}),
         visible: l.visible,
         opacity: l.mesh.opacity ?? 1,
         position: l.mesh.position.toArray(),
@@ -3137,6 +3316,7 @@ async function saveScene() {
     anim: {
       duration: anim.duration,
       curve: anim.curve,
+      fov: frameVfov(),
       fps: Number(tlFps.value) || 30,
       res: tlRes.value,
       guides: tlGuides.value,
@@ -3198,11 +3378,12 @@ async function restoreScene(text, firstLayer) {
       }
       if (!layer) continue
       if (ld.name) layer.name = ld.name
+      if (ld.ref) layer.ref = ld.ref
       layer.mesh.position.fromArray(ld.position)
       layer.mesh.quaternion.fromArray(ld.quaternion)
       layer.mesh.scale.fromArray(ld.scale)
       layer.mesh.updateMatrixWorld(true)
-      layer.mesh.opacity = ld.opacity ?? 1
+      setLayerOpacity(layer, ld.opacity ?? 1)
       layer.visible = ld.visible !== false
       layer.mesh.visible = layer.visible
     }
@@ -3238,6 +3419,7 @@ async function restoreScene(text, firstLayer) {
       renderKeys()
       rebuildPath()
       if (anim.keys.length >= 2 && timelinePanel.hidden) toggleTimeline()
+      if (a.fov) setFrameVfov(a.fov) // après la timeline : le cadre dépend de sa hauteur
     }
     // Formes d'édition (v2) ; rétrocompat : ancien champ « crop » = 1 boîte Garder.
     const ed = data.edit
@@ -3306,7 +3488,44 @@ $('bg-color').addEventListener('input', scheduleSceneSave)
 const recentsBox = $('recents')
 const recentsList = $('recents-list')
 
+// Ouvre une scène .nex.json : remplace les calques ouverts, puis charge le
+// premier calque splat de la scène — la restauration du sidecar fait le reste.
+async function openSceneFile(filePath) {
+  const text = await window.api.readText?.(filePath)
+  let data = null
+  try {
+    data = JSON.parse(text)
+  } catch {
+    /* illisible */
+  }
+  const first = data?.layers?.find((ld) => ld.kind !== 'mesh' && ld.path)
+  if (!first) {
+    showError(new Error(`${t('Not a scene file:')} ${baseName(filePath)}`))
+    return
+  }
+  for (const l of [...layers]) removeLayer(l)
+  undoStack.length = 0
+  redoStack.length = 0
+  sceneFile = filePath
+  await openPath(first.path)
+  // Une scène venue d'un plan (NEXUS Verse) s'ouvre à sa première clé : on voit
+  // ce que le plan voit, pas le monde entier de l'extérieur.
+  const k0 = anim.keys[0]
+  if (k0) {
+    camera.position.copy(k0.position)
+    camera.quaternion.copy(k0.quaternion)
+    controls.target.copy(k0.target)
+    controls.update()
+    anim.time = 0
+    updatePlayhead?.()
+  }
+}
+
+const MESH_RE = /\.(glb|gltf)$/i
+
 async function openPath(filePath) {
+  if (/\.nex\.json$/i.test(filePath)) return openSceneFile(filePath)
+  if (MESH_RE.test(filePath)) return loadMeshFile(filePath)
   showLoading(t('Reading file…'))
   try {
     // Lecture en flux : les chunks sont tirés du disque à la demande du
@@ -3391,6 +3610,8 @@ async function openViaDialog() {
       title: t('Open a splat file'),
       filters: [
         { name: t('Splat files'), extensions: ['ply', 'spz', 'splat', 'ksplat'] },
+        { name: t('Reference meshes'), extensions: ['glb', 'gltf'] },
+        { name: t('NEXUS scenes'), extensions: ['json'] },
         { name: t('All files'), extensions: ['*'] }
       ]
     })
@@ -3476,7 +3697,7 @@ async function loadFile(source, fileName, filePath = null) {
     // (autres calques, transformations, animation, rognage, fond) si un
     // fichier <nom>.nex.json existe à côté.
     if (layers.length === 1 && filePath) {
-      const sidecar = await window.api.readText?.(filePath + '.nex.json')
+      const sidecar = await window.api.readText?.(sceneFile || filePath + '.nex.json')
       if (sidecar) await restoreScene(sidecar, layer)
     }
 
@@ -3488,6 +3709,78 @@ async function loadFile(source, fileName, filePath = null) {
       `${t('Layer')} ${layers.length} — ${nfmt(nSplats)} ${t('splats')} · ${mb < 1 ? (mb * 1024).toFixed(0) + ' KB' : mb.toFixed(1) + ' MB'} · ${secs} s`,
       5000
     )
+  } catch (err) {
+    showError(err)
+  } finally {
+    loading.hidden = true
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Calques de référence : maillages GLB/glTF (objets 3D de NEXUS Verse, ou
+// n'importe quel modèle à voir en contexte). Éclairés par une paire de lumières
+// ajoutée à la première ouverture ; les splats ne les voient pas.
+// ---------------------------------------------------------------------------
+const gltfLoader = new GLTFLoader()
+let meshLights = null
+
+function ensureMeshLights() {
+  if (meshLights) return
+  meshLights = new THREE.Group()
+  meshLights.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.2))
+  const sun = new THREE.DirectionalLight(0xffffff, 1.6)
+  sun.position.set(1.5, 3, 2)
+  meshLights.add(sun)
+  scene.add(meshLights)
+}
+
+function setLayerOpacity(layer, value) {
+  if (isMeshLayer(layer)) {
+    layer.mesh.opacity = value
+    layer.mesh.traverse((n) => {
+      if (n.isMesh) n.material.opacity = value
+    })
+  } else {
+    layer.mesh.opacity = value
+  }
+}
+
+async function loadMeshFile(filePath) {
+  showLoading(`${t('Reading file…')} ${baseName(filePath)}`)
+  errorBox.hidden = true
+  try {
+    const payload = await window.api.readFile(filePath)
+    const gltf = await gltfLoader.parseAsync(payload.bytes, '')
+    const root = gltf.scene
+    let faces = 0
+    root.traverse((n) => {
+      if (n.isMesh) {
+        if (!n.geometry.attributes.normal) n.geometry.computeVertexNormals()
+        const old = n.material
+        // Dessiné après les splats (Spark n'écrit pas la profondeur) : un objet posé
+        // dans un monde reste devant sa surface, comme dans NEXUS Verse.
+        n.material = new THREE.MeshStandardMaterial({
+          vertexColors: !!n.geometry.attributes.color,
+          map: old?.map || null,
+          color: old?.color || 0xffffff,
+          roughness: old?.roughness ?? 0.85,
+          metalness: old?.metalness ?? 0,
+          side: THREE.DoubleSide,
+          transparent: true
+        })
+        n.renderOrder = 1
+        faces += n.geometry.index ? n.geometry.index.count / 3 : n.geometry.attributes.position.count / 3
+      }
+    })
+    ensureMeshLights()
+    scene.add(root)
+    const layer = { id: ++layerSeq, name: payload.name, filePath, mesh: root, visible: true, kind: 'mesh', faces }
+    layers.push(layer)
+    setActiveLayer(layer)
+    if (layers.length === 1) frameScene()
+    computeSceneBounds()
+    refreshSceneUI()
+    showToast(`${t('Layer')} ${layers.length} — ${t('mesh')} · ${nfmt(Math.round(faces))} ${t('faces')}`, 5000)
   } catch (err) {
     showError(err)
   } finally {
@@ -3639,7 +3932,7 @@ function renderLayersList() {
 
     const count = document.createElement('span')
     count.className = 'l-count'
-    count.textContent = compactCount(layer.mesh.packedSplats?.numSplats ?? 0)
+    count.textContent = isMeshLayer(layer) ? t('mesh') : compactCount(layer.mesh.packedSplats?.numSplats ?? 0)
 
     const del = document.createElement('button')
     del.className = 'l-del'
@@ -3665,7 +3958,7 @@ function renderLayersList() {
       op.className = 'l-opacity'
       op.title = t('Layer opacity')
       op.addEventListener('input', () => {
-        layer.mesh.opacity = Number(op.value)
+        setLayerOpacity(layer, Number(op.value))
         scheduleSceneSave()
       })
       op.addEventListener('click', (ev) => ev.stopPropagation())
@@ -3730,6 +4023,15 @@ window.addEventListener('drop', async (e) => {
       const filePath = window.api.getPathForFile?.(file)
       if (filePath) {
         await openPath(filePath)
+      } else if (MESH_RE.test(file.name)) {
+        const gltf = await gltfLoader.parseAsync(await file.arrayBuffer(), '')
+        ensureMeshLights()
+        scene.add(gltf.scene)
+        const layer = { id: ++layerSeq, name: file.name, filePath: null, mesh: gltf.scene, visible: true, kind: 'mesh' }
+        layers.push(layer)
+        setActiveLayer(layer)
+        computeSceneBounds()
+        refreshSceneUI()
       } else {
         const buffer = await file.arrayBuffer()
         await loadFile(buffer, file.name)

@@ -23,6 +23,10 @@ contextBridge.exposeInMainWorld('api', {
   onTestChanImport: (cb) => ipcRenderer.on('debug:chanimport', (_e, p) => cb(p)),
   onRoundtrip: (cb) => ipcRenderer.on('bridge:roundtrip', (_e, p) => cb(p)),
   onDoRoundtrip: (cb) => ipcRenderer.on('bridge:do-roundtrip', () => cb()),
+  onScene: (cb) => ipcRenderer.on('bridge:scene', (_e, p) => cb(p)),
+  onVerse: (cb) => ipcRenderer.on('bridge:verse', (_e, v) => cb(v)),
+  onDoVerse: (cb) => ipcRenderer.on('bridge:do-verse', () => cb()),
+  postJson: (url, body) => ipcRenderer.invoke('bridge:post', { url, body }),
   // Résout le chemin réel d'un File issu d'un glisser-déposer (Electron 32+).
   getPathForFile: (file) => {
     try {

@@ -114,6 +114,7 @@ html, body {
   transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.05s;
 }
 .btn:hover { border-color: var(--border-strong); background: rgba(255, 255, 255, 0.06); }
+#btn-nuke, #btn-verse { white-space: nowrap; }
 .btn:active { transform: translateY(1px); }
 .btn:focus-visible { outline: 1px solid #fff; outline-offset: 2px; }
 .btn.primary {

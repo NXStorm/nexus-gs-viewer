@@ -6,7 +6,7 @@
 
 **View, clean, animate and export Gaussian Splats — a playblast-ready splat editor built for VFX pipelines.**
 
-![Version](https://img.shields.io/badge/version-0.13.0-white)
+![Version](https://img.shields.io/badge/version-0.14.0-white)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-0078d4)
 ![Electron](https://img.shields.io/badge/Electron-33-9feaf9)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -42,6 +42,8 @@ Gaussian Splat scans come out of training noisy — floaters, stray ground, blow
 - 🎬 **Camera timeline** — keyframes with easing per key, Catmull-Rom curves, Blender-style camera frame with composition guides (thirds, safe areas)
 - 📼 **Playblast export** — MP4 (H.264) or **PNG sequence with alpha**, fixed 1080p/4K/Scope/vertical formats, burn-in timecode option
 - 🎥 **Nuke camera round-trip** — export the animated camera as `.chan`, or import a tracked `.chan` from Nuke and replay it on the splats
+- 🔗 **NEXUS Verse link** — a Verse project opens here with its world, splat layers, objects (as reference meshes) and camera; **→ NEXUS Verse** sends the edited layers back and Verse updates in place
+- 🧊 **Reference meshes** — GLB/glTF models load as lit, movable layers next to the splats (never exported as splats)
 - 🧹 **Cleanup shapes** — boxes, spheres, cylinders and cutting planes in **Keep** / **Erase** / **Select** mode, soft-edge falloff, real-time SDF masking
 - 🖌️ **Brushes** — paint directly on the splats to erase or select (wheel = radius)
 - ✂️ **Splat selection ops** — extract (cut), duplicate (copy/paste) or delete the selection; extracted splats become a movable layer
@@ -138,6 +140,16 @@ Requires Node.js 18+.
 - **NEX → Nuke**: export `.chan` from the timeline, import it on a Camera node (default ZXY rotation order, focal for Nuke's default 24.576 mm horizontal aperture — verified inside Nuke 17 with the NEXUS 4D Viewer bridge test). The camera matches the playblast frame-for-frame — composite the alpha PNG sequence directly.
 - **Nuke → NEX**: export a tracked camera as `.chan` from Nuke, click **⤓ Chan** in the timeline (set the timeline fps first). One key per frame, Linear curve, exact replay.
 
+### NEXUS Verse link
+
+[NEXUS Verse](https://github.com/NXStorm/nexus-verse) turns a photo into a world with 3D objects; its **↗ Open in NEXUS GS** button opens the chosen layers here — the world and splat layers as editable splats, the objects as reference meshes, the shot camera on the timeline, the view on its first key. Clean, brush, extract, move, then click **→ NEXUS Verse**: every edited splat layer is re-exported in its own frame, and Verse replaces the files, applies the moves, imports extracted selections as new layers and takes the camera back. The viewer is launched as
+
+```bash
+"NEXUS GS Viewer.exe" --scene project.nex.json --verse return_folder --verse-url http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return
+```
+
+`--scene` opens any `.nex.json` scene file on its own (**Open…** accepts them too); `--verse` shows the return button and `--verse-url` is called when the return is written — without it, or with Verse closed, the files wait in the return folder and Verse picks them up when the project is open. Spherical harmonics above order 0 are not preserved in re-exported layers (a limit of the editor's export), untouched layers keep their original file.
+
 ### Headless CLI
 
 ```bash
@@ -166,7 +178,7 @@ nex-gs-viewer/
 ├── src/
 │   ├── main/index.js        # Electron main — IPC, CLI, file associations
 │   ├── preload/index.js     # Safe bridge between main and renderer
-│   └── renderer/            # The app: viewer, timeline, editor, i18n
+│   └── renderer/            # The app: viewer, timeline, editor, i18n, Verse link
 ├── scripts/
 │   ├── package.mjs          # npm run package → portable win32-x64 build
 │   └── make-test-ply.mjs    # Generates the 2k-splat test sphere
