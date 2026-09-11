@@ -144,7 +144,7 @@ Requires Node.js 18+.
 
 ### NEXUS Verse link
 
-[NEXUS Verse](https://github.com/NXStorm/nexus-verse) turns a photo into a world with 3D objects; its **↗ Open in NEXUS GS** button opens the chosen layers here — the world and splat layers as editable splats, the objects as reference meshes, the shot camera on the timeline, the view on its first key. Clean, brush, extract, move, then click **→ NEXUS Verse**: every edited splat layer is re-exported in its own frame, and Verse replaces the files, applies the moves, imports extracted selections as new layers and takes the camera back. The viewer is launched as
+[NEXUS Verse](https://github.com/NXStorm/nexus-verse) turns a photo into a world with 3D objects; its **↗ Open in NEXUS GS** button opens the chosen layers here — the world and splat layers as editable splats, the objects as reference meshes, the shot camera on the timeline, the view on its first key. Clean, brush, extract, move, then click **→ NEXUS Verse**: every edited splat layer is re-exported in its own frame, and Verse replaces the files, applies the moves, imports extracted selections as new layers, deletes the layers you deleted and takes the camera back. The viewer is launched as
 
 ```bash
 "NEXUS GS Viewer.exe" --scene=project.nex.json --verse=return_folder --verse-url=http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return

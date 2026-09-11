@@ -2319,6 +2319,13 @@ async function sendToVerse() {
     if (verseBridge.url) {
       const res = await window.api.postJson(verseBridge.url, manifest)
       if (res.ok) {
+        // Verse gives the layers created here their ids: from now on they are updated, not re-imported.
+        try {
+          const refs = JSON.parse(res.text)?.changes?.new_refs || {}
+          for (const rec of manifest.layers) if (!rec.ref && rec.file && refs[rec.file]) { const l = layers.find((x) => x.name === rec.name && !x.ref); if (l) l.ref = refs[rec.file] }
+        } catch {
+          /* pas de JSON */
+        }
         console.log(`[verse] OK — ${note}`)
         showToast(`${t('Sent to NEXUS Verse —')} ${note}`, 6000)
       } else {
