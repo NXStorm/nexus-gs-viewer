@@ -2122,8 +2122,100 @@ let verseBridge = null // { dir, url }
 function layerEdited(layer) {
   if (isMeshLayer(layer)) return false
   if (layer.baked || !layer.filePath) return true
-  return crop.active && crop.shapes.some((s) => s.visible && s.mode !== 'select')
+  if (!crop.active) return false
+  // Une forme ne compte que si elle touche le calque (un plan de coupe touche tout).
+  let lb = null
+  try {
+    layer.mesh.updateMatrixWorld(true)
+    lb = layer.mesh.getBoundingBox(true).clone().applyMatrix4(layer.mesh.matrixWorld)
+  } catch {
+    return true
+  }
+  return crop.shapes.some((s) => {
+    if (!s.visible || s.mode === 'select') return false
+    if (s.type === 'plane' || s.type === 'stroke') return true
+    s.group.updateMatrixWorld(true)
+    return new THREE.Box3().setFromObject(s.group).intersectsBox(lb)
+  })
 }
+
+// Scénario de démo du lien NEXUS Verse (« --demo verse ») : la scène venue de
+// Verse, une orbite, une boîte d'effacement qui grandit sur ce que Marble a
+// inventé, un aller-retour de sa visibilité, puis « → NEXUS Verse ».
+async function runVerseDemo({ box }) {
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+  const spec = box ? box.split(',').map(Number) : null
+  shortcutsPanel.classList.add('hidden')
+  await wait(1200)
+  // Un panoramique presque sur place (cible à 0,5 m devant la caméra) : la caméra
+  // est au point de vue de la photo, une orbite large la ferait entrer dans les murs.
+  const keepTarget = controls.target.clone()
+  const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
+  controls.target.copy(camera.position).addScaledVector(fwd, 0.5)
+  controls.update()
+  controls.autoRotate = true
+  controls.autoRotateSpeed = 0.9
+  await wait(3200)
+  controls.autoRotate = false
+  controls.update()
+  // puis un léger piqué vers le bas : ce que Marble a inventé au premier plan est sous le cadre
+  const fwd2 = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion)
+  const dist = keepTarget.distanceTo(camera.position)
+  const t1 = performance.now()
+  while (performance.now() - t1 < 1200) {
+    const k = Math.min(1, (performance.now() - t1) / 1200)
+    const dir = fwd2.clone().applyAxisAngle(right, -THREE.MathUtils.degToRad(14) * (1 - Math.pow(1 - k, 2)))
+    controls.target.copy(camera.position).addScaledVector(dir, dist)
+    controls.update()
+    await wait(16)
+  }
+  await wait(400)
+  let shape = null
+  if (spec && spec.length === 6 && spec.every(Number.isFinite)) {
+    if (!crop.active) {
+      toggleCrop()
+      for (const s of [...crop.shapes]) removeShapeNoUndo(s) // pas de boîte « Garder » par défaut
+    }
+    await wait(600)
+    shape = addShape('box', 'erase')
+    shape.name = 'Marble’s extra armchair'
+    shape.group.position.set(spec[0], spec[1], spec[2])
+    const target = new THREE.Vector3(spec[3], spec[4], spec[5])
+    const t0 = performance.now()
+    while (performance.now() - t0 < 1400) {
+      const k = Math.min(1, (performance.now() - t0) / 1400)
+      shape.group.scale.copy(target).multiplyScalar(0.05 + 0.95 * (1 - Math.pow(1 - k, 3)))
+      shape.group.updateMatrixWorld(true)
+      rebuildEdits()
+      await wait(16)
+    }
+    shape.group.scale.copy(target)
+    shape.group.updateMatrixWorld(true)
+    rebuildEdits()
+    renderEditList()
+    await wait(1200)
+    for (let i = 0; i < 1; i++) {
+      shape.visible = false
+      shape.group.visible = false
+      rebuildEdits()
+      renderEditList()
+      await wait(900)
+      shape.visible = true
+      shape.group.visible = true
+      rebuildEdits()
+      renderEditList()
+      await wait(900)
+    }
+  }
+  await wait(600)
+  await sendToVerse()
+  await wait(3200)
+  console.log('[demo] done')
+}
+window.api.onDemo?.((d) => {
+  if (d?.name === 'verse') runVerseDemo(d).catch((e) => console.log(`[demo] ERREUR: ${e?.message || e}`))
+})
 
 // PLY 3DGS d'un seul calque, centres dans le repère du calque (la transformation
 // part à part dans le manifeste) ; les formes d'édition s'appliquent en monde.

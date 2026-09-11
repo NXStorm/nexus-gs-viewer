@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('api', {
   onScene: (cb) => ipcRenderer.on('bridge:scene', (_e, p) => cb(p)),
   onVerse: (cb) => ipcRenderer.on('bridge:verse', (_e, v) => cb(v)),
   onDoVerse: (cb) => ipcRenderer.on('bridge:do-verse', () => cb()),
+  onDemo: (cb) => ipcRenderer.on('demo:run', (_e, d) => cb(d)),
   postJson: (url, body) => ipcRenderer.invoke('bridge:post', { url, body }),
   // Résout le chemin réel d'un File issu d'un glisser-déposer (Electron 32+).
   getPathForFile: (file) => {

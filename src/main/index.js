@@ -5,6 +5,7 @@ import {
   createReadStream,
   existsSync,
   fstatSync,
+  mkdirSync,
   openSync,
   readFileSync,
   readSync,
@@ -78,10 +79,24 @@ function cliRenderOpts(argv) {
 }
 
 // Pont Nuke : lecture d'un flag « --nom valeur » dans argv.
+// « --nom=valeur » d'abord : une relance (second-instance) reçoit un argv réordonné par
+// Chromium — les switches devant, leurs valeurs rejetées derrière — et seule la forme
+// avec « = » reste entière. « --nom valeur » marche au premier lancement.
+function cliArgs(argv) {
+  const args = argv.slice(1)
+  if (!app.isPackaged) {
+    // dev : le chemin de l'app (« . ») est le premier positionnel — pas forcément argv[1]
+    const i = args.findIndex((a) => !a.startsWith('--'))
+    if (i !== -1) args.splice(i, 1)
+  }
+  return args
+}
 function flagFromArgv(argv, flag) {
-  const args = argv.slice(app.isPackaged ? 1 : 2)
+  const args = cliArgs(argv)
+  const eq = args.find((a) => a.startsWith(flag + '='))
+  if (eq) return eq.slice(flag.length + 1) || null
   const i = args.indexOf(flag)
-  return i !== -1 && args[i + 1] ? args[i + 1] : null
+  return i !== -1 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null
 }
 
 // « exe scene.ply --roundtrip sortie.ply » affiche un bouton « → Nuke » qui
@@ -98,6 +113,45 @@ const sceneFromArgv = (argv) => {
   const args = argv.slice(app.isPackaged ? 1 : 2)
   return args.find((a) => a.toLowerCase().endsWith('.nex.json') && existsSync(a)) || null
 }
+// Enregistrement de la fenêtre pour les démos : « --record dossier [--record-fps 20] »
+// capture des JPEG numérotés (fenêtre mise en 1600×1000) jusqu'à « [demo] done »
+// dans la console du renderer, puis écrit « done » dans le dossier. « --demo verse »
+// joue le scénario du lien NEXUS Verse (orbite, une boîte d'effacement qui grandit
+// — « --demo-box cx,cy,cz,hx,hy,hz » ou SPLAT_DEMO_BOX —, envoi).
+let recording = null
+function startRecording(dir, fps) {
+  if (recording) return
+  mkdirSync(dir, { recursive: true })
+  mainWindow.setContentSize(1600, 1000)
+  mainWindow.center()
+  recording = { dir, fps, i: 0, on: true }
+  ;(async () => {
+    while (recording?.on && mainWindow) {
+      const t = Date.now()
+      try {
+        const img = await mainWindow.webContents.capturePage()
+        writeFileSync(join(dir, `f${String(recording.i++).padStart(5, '0')}.jpg`), img.toJPEG(92))
+      } catch {
+        /* fenêtre fermée */
+      }
+      const dt = 1000 / fps - (Date.now() - t)
+      if (dt > 0) await new Promise((r) => setTimeout(r, dt))
+    }
+  })()
+}
+function stopRecording() {
+  if (!recording) return
+  recording.on = false
+  writeFileSync(join(recording.dir, 'done'), String(recording.i))
+  console.log(`[record] ${recording.i} images → ${recording.dir}`)
+  recording = null
+}
+function recordFromArgv(argv) {
+  const dir = flagFromArgv(argv, '--record')
+  return dir ? { dir, fps: Number(flagFromArgv(argv, '--record-fps')) || 20 } : null
+}
+const demoFromArgv = (argv) => flagFromArgv(argv, '--demo')
+
 const verseFromArgv = (argv) => {
   const dir = flagFromArgv(argv, '--verse')
   return dir ? { dir, url: flagFromArgv(argv, '--verse-url') } : null
@@ -340,6 +394,7 @@ function createWindow() {
     if (process.env['SPLAT_TEST_VERSE'] && message.startsWith('[verse]')) {
       setTimeout(() => app.quit(), 500)
     }
+    if (message.startsWith('[demo] done')) stopRecording()
   })
 
   mainWindow.webContents.on('did-finish-load', () => {
@@ -403,6 +458,16 @@ function createWindow() {
     if (verse && process.env['SPLAT_TEST_VERSE']) {
       setTimeout(() => mainWindow.webContents.send('bridge:do-verse'), Number(process.env['SPLAT_TEST_VERSE_DELAY']) || 9000)
     }
+  }
+
+  // Démos : enregistrement de la fenêtre et scénario joué une fois la scène chargée.
+  const rec = recordFromArgv(process.argv)
+  const demo = demoFromArgv(process.argv)
+  if (rec || demo) {
+    mainWindow.webContents.on('did-finish-load', () => {
+      if (rec) setTimeout(() => startRecording(rec.dir, rec.fps), 500)
+      if (demo) setTimeout(() => mainWindow.webContents.send('demo:run', { name: demo, box: flagFromArgv(process.argv, '--demo-box') || process.env['SPLAT_DEMO_BOX'] || null }), 8000)
+    })
   }
 
   // Pont Nuke : transmet le chemin de retour au renderer une fois chargé.
@@ -484,6 +549,10 @@ if (!gotLock) {
     if (sc) mainWindow.webContents.send('bridge:scene', sc)
     const vs = verseFromArgv(argv)
     if (vs) mainWindow.webContents.send('bridge:verse', vs)
+    const rec = recordFromArgv(argv)
+    if (rec) startRecording(rec.dir, rec.fps)
+    const demo = demoFromArgv(argv)
+    if (demo) setTimeout(() => mainWindow.webContents.send('demo:run', { name: demo, box: flagFromArgv(argv, '--demo-box') || process.env['SPLAT_DEMO_BOX'] || null }), 1500)
     const ch = flagFromArgv(argv, '--chan')
     if (ch) {
       const fps = Number(flagFromArgv(argv, '--fps')) || undefined

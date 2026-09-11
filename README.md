@@ -145,10 +145,10 @@ Requires Node.js 18+.
 [NEXUS Verse](https://github.com/NXStorm/nexus-verse) turns a photo into a world with 3D objects; its **↗ Open in NEXUS GS** button opens the chosen layers here — the world and splat layers as editable splats, the objects as reference meshes, the shot camera on the timeline, the view on its first key. Clean, brush, extract, move, then click **→ NEXUS Verse**: every edited splat layer is re-exported in its own frame, and Verse replaces the files, applies the moves, imports extracted selections as new layers and takes the camera back. The viewer is launched as
 
 ```bash
-"NEXUS GS Viewer.exe" --scene project.nex.json --verse return_folder --verse-url http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return
+"NEXUS GS Viewer.exe" --scene=project.nex.json --verse=return_folder --verse-url=http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return
 ```
 
-`--scene` opens any `.nex.json` scene file on its own (**Open…** accepts them too); `--verse` shows the return button and `--verse-url` is called when the return is written — without it, or with Verse closed, the files wait in the return folder and Verse picks them up when the project is open. Spherical harmonics above order 0 are not preserved in re-exported layers (a limit of the editor's export), untouched layers keep their original file.
+Use the `--flag=value` form when the viewer may already be open: a second launch reaches the running instance, and Chromium reorders a detached value. `--scene` opens any `.nex.json` scene file on its own (**Open…** accepts them too); `--verse` shows the return button and `--verse-url` is called when the return is written — without it, or with Verse closed, the files wait in the return folder and Verse picks them up when the project is open. Spherical harmonics above order 0 are not preserved in re-exported layers (a limit of the editor's export), untouched layers keep their original file.
 
 ### Headless CLI
 

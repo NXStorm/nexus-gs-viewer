@@ -142,10 +142,10 @@ Nécessite Node.js 18+.
 [NEXUS Verse](https://github.com/NXStorm/nexus-verse) transforme une photo en monde avec des objets 3D ; son bouton **↗ Open in NEXUS GS** ouvre ici les couches choisies — le monde et les calques splat en splats éditables, les objets en maillages de référence, la caméra du plan sur la timeline, la vue sur sa première clé. Nettoie, gomme, extrais, déplace, puis clique **→ NEXUS Verse** : chaque calque splat édité est réexporté dans son propre repère, et Verse remplace les fichiers, applique les déplacements, importe les sélections extraites en nouvelles couches et reprend la caméra. Le viewer est lancé ainsi :
 
 ```bash
-"NEXUS GS Viewer.exe" --scene projet.nex.json --verse dossier_retour --verse-url http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return
+"NEXUS GS Viewer.exe" --scene=projet.nex.json --verse=dossier_retour --verse-url=http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return
 ```
 
-`--scene` ouvre n'importe quel fichier de scène `.nex.json` seul (**Ouvrir…** les accepte aussi) ; `--verse` affiche le bouton de retour et `--verse-url` est appelée quand le retour est écrit — sans elle, ou Verse fermé, les fichiers attendent dans le dossier de retour et Verse les récupère à l'ouverture du projet. Les harmoniques sphériques d'ordre > 0 ne sont pas conservées dans les calques réexportés (limite de l'export de l'éditeur) ; les calques non touchés gardent leur fichier d'origine.
+Préférer la forme `--flag=valeur` quand le viewer peut déjà être ouvert : une relance rejoint l'instance en cours et Chromium réordonne une valeur détachée. `--scene` ouvre n'importe quel fichier de scène `.nex.json` seul (**Ouvrir…** les accepte aussi) ; `--verse` affiche le bouton de retour et `--verse-url` est appelée quand le retour est écrit — sans elle, ou Verse fermé, les fichiers attendent dans le dossier de retour et Verse les récupère à l'ouverture du projet. Les harmoniques sphériques d'ordre > 0 ne sont pas conservées dans les calques réexportés (limite de l'export de l'éditeur) ; les calques non touchés gardent leur fichier d'origine.
 
 ### CLI headless
 
