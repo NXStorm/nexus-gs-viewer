@@ -43,6 +43,7 @@ Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol 
 - 🎥 **Aller-retour caméra Nuke** — exporte la caméra animée en `.chan`, ou importe un `.chan` tracké depuis Nuke et rejoue-le sur les splats
 - 🔗 **Lien NEXUS Verse** — un projet Verse s'ouvre ici avec son monde, ses calques splat, ses objets (maillages de référence) et sa caméra ; **→ NEXUS Verse** renvoie les calques édités et Verse se met à jour en place
 - 🧊 **Maillages de référence** — les modèles GLB/glTF se chargent en calques éclairés et déplaçables à côté des splats (jamais exportés en splat)
+- 🗂️ **Projets NEXUS** — un export, un playblast, une capture ou un `.chan` enregistré dans un dossier de projet NEXUS est inscrit dans son manifeste `project.nexus.json` (le NEXUS Hub le montre avec l'historique du projet)
 - 💡 **Calques lumière** — ponctuelles, spots, directionnelles et ambiante en calques (depuis une scène NEXUS Verse, ou `addLightLayer` dans la console) : une poignée déplaçable au gizmo, qui n'éclaire que les maillages de référence
 - 🧹 **Formes de nettoyage** — boîtes, sphères, cylindres et plans de coupe en mode **Garder** / **Effacer** / **Sélection**, bord doux, masquage SDF temps réel
 - 🖌️ **Pinceaux** — peins directement sur les splats pour effacer ou sélectionner (molette = rayon)

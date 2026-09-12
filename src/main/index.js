@@ -14,6 +14,7 @@ import {
   writeSync
 } from 'fs'
 import { basename, join } from 'path'
+import { register as registerNexusAsset } from './nexusProject'
 
 const SPLAT_EXTS = ['.ply', '.spz', '.splat', '.ksplat']
 
@@ -273,24 +274,25 @@ let writeSeq = 0
 ipcMain.handle('file:openWrite', (_e, filePath) => {
   const fd = openSync(filePath, 'w')
   const id = ++writeSeq
-  writeFds.set(id, fd)
+  writeFds.set(id, { fd, filePath })
   return id
 })
 
 ipcMain.handle('file:writeAt', (_e, { id, position, bytes }) => {
-  const fd = writeFds.get(id)
-  if (fd === undefined) return false
+  const w = writeFds.get(id)
+  if (w === undefined) return false
   const buf = Buffer.from(bytes)
-  writeSync(fd, buf, 0, buf.length, position)
+  writeSync(w.fd, buf, 0, buf.length, position)
   return true
 })
 
 ipcMain.handle('file:closeWrite', (_e, id) => {
-  const fd = writeFds.get(id)
-  if (fd === undefined) return 0
-  const { size } = fstatSync(fd)
-  closeSync(fd)
+  const w = writeFds.get(id)
+  if (w === undefined) return 0
+  const { size } = fstatSync(w.fd)
+  closeSync(w.fd)
   writeFds.delete(id)
+  registerNexusAsset(w.filePath, 'nexus-gs-viewer', '0.15.1')
   return size
 })
 
@@ -324,6 +326,7 @@ ipcMain.handle('file:saveAs', async (_e, { title, defaultName, filters }) => {
 
 ipcMain.handle('file:write', async (_e, { filePath, bytes }) => {
   writeFileSync(filePath, Buffer.from(bytes))
+  registerNexusAsset(filePath, 'nexus-gs-viewer', '0.15.1') // dans un projet NEXUS : le manifeste apprend l'export
   return true
 })
 

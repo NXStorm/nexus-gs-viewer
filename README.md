@@ -44,6 +44,7 @@ Gaussian Splat scans come out of training noisy — floaters, stray ground, blow
 - 🎥 **Nuke camera round-trip** — export the animated camera as `.chan`, or import a tracked `.chan` from Nuke and replay it on the splats
 - 🔗 **NEXUS Verse link** — a Verse project opens here with its world, splat layers, objects (as reference meshes) and camera; **→ NEXUS Verse** sends the edited layers back and Verse updates in place
 - 🧊 **Reference meshes** — GLB/glTF models load as lit, movable layers next to the splats (never exported as splats)
+- 🗂️ **NEXUS projects** — an export, a playblast, a capture or a `.chan` saved inside a NEXUS project folder is registered in its `project.nexus.json` manifest (the NEXUS Hub shows it with the project's history)
 - 💡 **Light layers** — point, spot, directional and ambient lights as layers (from a NEXUS Verse scene, or `addLightLayer` from the console): a handle you move with the gizmo, lighting the reference meshes only
 - 🧹 **Cleanup shapes** — boxes, spheres, cylinders and cutting planes in **Keep** / **Erase** / **Select** mode, soft-edge falloff, real-time SDF masking
 - 🖌️ **Brushes** — paint directly on the splats to erase or select (wheel = radius)
