@@ -195,8 +195,10 @@ canvas.addEventListener('pointerup', (e) => {
 const layers = [] // { id, name, filePath, mesh, visible, kind?, ref? }
 let activeLayer = null
 let layerSeq = 0
-const visibleLayers = () => layers.filter((l) => l.visible && l.kind !== 'mesh')
+// … or a light (kind 'light', from NEXUS Verse or added here): it lights the mesh layers only.
+const visibleLayers = () => layers.filter((l) => l.visible && !l.kind)
 const isMeshLayer = (l) => l?.kind === 'mesh'
+const isLightLayer = (l) => l?.kind === 'light'
 
 // Limites de la scène en coordonnées monde (proximité caméra, cadrage).
 let sceneBox = null
@@ -206,7 +208,7 @@ let sceneRadius = 1
 function computeSceneBounds() {
   const box = new THREE.Box3()
   let any = false
-  for (const l of layers.filter((x) => x.visible)) {
+  for (const l of layers.filter((x) => x.visible && !isLightLayer(x))) {
     try {
       l.mesh.updateMatrixWorld(true)
       const b = isMeshLayer(l)
@@ -361,7 +363,7 @@ const I18N_FR = {
   'Sending to NEXUS Verse…': 'Envoi vers NEXUS Verse…', 're-exported': 'réexportés',
   'Verse will pick it up when the project is open': 'Verse le récupérera à l’ouverture du projet',
   'Send the edited layers back to NEXUS Verse': 'Renvoyer les calques édités vers NEXUS Verse',
-  'Reference meshes': 'Maillages de référence', 'NEXUS scenes': 'Scènes NEXUS', 'Not a scene file:': 'Pas un fichier de scène :',
+  'Reference meshes': 'Maillages de référence', Light: 'Lumière', point: 'ponctuelle', spot: 'spot', directional: 'directionnelle', hemisphere: 'ambiante', 'NEXUS scenes': 'Scènes NEXUS', 'Not a scene file:': 'Pas un fichier de scène :',
   mesh: 'maillage', faces: 'faces',
   'Send the cleaned scene back to Nuke': 'Renvoyer la scène nettoyée vers Nuke',
   'No visible layer to export': 'Aucun calque visible à exporter',
@@ -2120,7 +2122,7 @@ let verseBridge = null // { dir, url }
 // extraction, « Appliquer »), créé ici (sélection extraite) ou sous des formes
 // d'édition actives. Une simple transformation ne touche pas au fichier.
 function layerEdited(layer) {
-  if (isMeshLayer(layer)) return false
+  if (layer.kind) return false // maillages et lumières : pas de splats à réexporter
   if (layer.baked || !layer.filePath) return true
   if (!crop.active) return false
   // Une forme ne compte que si elle touche le calque (un plan de coupe touche tout).
@@ -2283,7 +2285,8 @@ async function sendToVerse() {
       layer.mesh.updateMatrixWorld(true)
       const rec = {
         ref: layer.ref || null,
-        kind: isMeshLayer(layer) ? 'mesh' : 'splat',
+        kind: layer.kind || 'splat',
+        ...(isLightLayer(layer) ? { light: lightParams(layer) } : {}),
         name: layer.name,
         visible: layer.visible,
         position: layer.mesh.position.toArray(),
@@ -3400,12 +3403,13 @@ async function saveScene() {
     version: 1,
     background: scene.background?.isColor ? '#' + scene.background.getHexString() : '#050505',
     layers: layers
-      .filter((l) => l.filePath)
+      .filter((l) => l.filePath || isLightLayer(l))
       .map((l) => ({
-        path: l.filePath,
+        ...(l.filePath ? { path: l.filePath } : {}),
         name: l.name,
         ...(l.kind ? { kind: l.kind } : {}),
         ...(l.ref ? { ref: l.ref } : {}),
+        ...(isLightLayer(l) ? { light: lightParams(l) } : {}),
         visible: l.visible,
         opacity: l.mesh.opacity ?? 1,
         position: l.mesh.position.toArray(),
@@ -3469,6 +3473,16 @@ async function restoreScene(text, firstLayer) {
       $('bg-color').value = data.background
     }
     for (const ld of data.layers ?? []) {
+      if (ld.kind === 'light') {
+        const layer = addLightLayer(ld.light || {}, ld.name)
+        if (ld.ref) layer.ref = ld.ref
+        layer.mesh.position.fromArray(ld.position)
+        layer.mesh.quaternion.fromArray(ld.quaternion)
+        layer.mesh.updateMatrixWorld(true)
+        layer.visible = ld.visible !== false
+        layer.mesh.visible = layer.visible
+        continue
+      }
       let layer = layers.find((l) => l.filePath === ld.path)
       if (!layer && ld.path !== firstLayer.filePath) {
         await openPath(ld.path) // calque supplémentaire de la scène
@@ -3825,6 +3839,7 @@ let meshLights = null
 
 function ensureMeshLights() {
   if (meshLights) return
+  if (layers.some(isLightLayer)) return // la scène éclaire elle-même
   meshLights = new THREE.Group()
   meshLights.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.2))
   const sun = new THREE.DirectionalLight(0xffffff, 1.6)
@@ -3832,6 +3847,46 @@ function ensureMeshLights() {
   meshLights.add(sun)
   scene.add(meshLights)
 }
+
+// Lumières : un groupe portant la lumière three.js et une poignée visible (sphère, cône ou soleil)
+// que le gizmo déplace ; la cible d'un spot ou d'une directionnelle reste en place dans le monde.
+// Les splats n'y sont pas sensibles. Une scène qui apporte ses lumières éteint l'éclairage par défaut.
+const LIGHT_HANDLE = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, depthTest: false })
+function lightParams(layer) {
+  const p = { ...layer.light }
+  if (layer.target) p.target = layer.target.position.toArray()
+  return p
+}
+function addLightLayer(spec, name) {
+  const type = ['point', 'spot', 'directional', 'hemisphere'].includes(spec.type) ? spec.type : 'point'
+  const color = new THREE.Color(spec.color || '#ffffff')
+  const group = new THREE.Group()
+  let light
+  if (type === 'spot') light = new THREE.SpotLight(color, spec.intensity ?? 8, spec.distance ?? 30, spec.angle ?? Math.PI / 5, spec.penumbra ?? 0.4, spec.decay ?? 1.5)
+  else if (type === 'directional') light = new THREE.DirectionalLight(color, spec.intensity ?? 1.2)
+  else if (type === 'hemisphere') light = new THREE.HemisphereLight(color, new THREE.Color(spec.ground || '#222222'), spec.intensity ?? 0.6)
+  else light = new THREE.PointLight(color, spec.intensity ?? 6, spec.distance ?? 30, spec.decay ?? 1.5)
+  group.add(light)
+  const layer = { id: ++layerSeq, name: name || `${t('Light')} ${layerSeq}`, filePath: null, mesh: group, visible: true, kind: 'light', light: { type, color: '#' + color.getHexString(), intensity: light.intensity, ...(spec.angle !== undefined ? { angle: spec.angle } : {}), ...(spec.penumbra !== undefined ? { penumbra: spec.penumbra } : {}), ...(spec.distance !== undefined ? { distance: spec.distance } : {}), ...(spec.decay !== undefined ? { decay: spec.decay } : {}), ...(spec.ground ? { ground: spec.ground } : {}) } }
+  if (type !== 'hemisphere') {
+    const geo = type === 'point' ? new THREE.SphereGeometry(0.07, 16, 10) : type === 'spot' ? new THREE.ConeGeometry(0.08, 0.16, 16) : new THREE.OctahedronGeometry(0.1)
+    const handle = new THREE.Mesh(geo, LIGHT_HANDLE)
+    handle.renderOrder = 2
+    group.add(handle)
+    if (type === 'spot' || type === 'directional') {
+      light.target.position.fromArray(spec.target || [0, -0.5, -3])
+      scene.add(light.target)
+      layer.target = light.target
+      if (type === 'spot') group.lookAt(light.target.position)
+    }
+  }
+  scene.add(group)
+  layers.push(layer)
+  if (meshLights) meshLights.visible = false
+  refreshSceneUI()
+  return layer
+}
+window.addLightLayer = addLightLayer // console / scripts
 
 function setLayerOpacity(layer, value) {
   if (isMeshLayer(layer)) {
@@ -3965,6 +4020,7 @@ function removeLayer(layer) {
   if (idx === -1) return
   if (activeLayer === layer) gizmo.detach()
   scene.remove(layer.mesh)
+  if (layer.target) scene.remove(layer.target)
   layers.splice(idx, 1)
   if (activeLayer === layer) setActiveLayer(layers[layers.length - 1] ?? null)
   computeSceneBounds()
@@ -4031,7 +4087,7 @@ function renderLayersList() {
 
     const count = document.createElement('span')
     count.className = 'l-count'
-    count.textContent = isMeshLayer(layer) ? t('mesh') : compactCount(layer.mesh.packedSplats?.numSplats ?? 0)
+    count.textContent = isMeshLayer(layer) ? t('mesh') : isLightLayer(layer) ? t(layer.light.type) : compactCount(layer.mesh.packedSplats?.numSplats ?? 0)
 
     const del = document.createElement('button')
     del.className = 'l-del'
@@ -4046,8 +4102,8 @@ function renderLayersList() {
     li.addEventListener('click', () => setActiveLayer(layer))
     layersList.appendChild(li)
 
-    // Calque actif : curseur d'opacité juste en dessous.
-    if (layer === activeLayer) {
+    // Calque actif : curseur d'opacité juste en dessous (pas pour une lumière).
+    if (layer === activeLayer && !isLightLayer(layer)) {
       const op = document.createElement('input')
       op.type = 'range'
       op.min = '0'

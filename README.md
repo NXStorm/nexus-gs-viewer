@@ -44,6 +44,7 @@ Gaussian Splat scans come out of training noisy — floaters, stray ground, blow
 - 🎥 **Nuke camera round-trip** — export the animated camera as `.chan`, or import a tracked `.chan` from Nuke and replay it on the splats
 - 🔗 **NEXUS Verse link** — a Verse project opens here with its world, splat layers, objects (as reference meshes) and camera; **→ NEXUS Verse** sends the edited layers back and Verse updates in place
 - 🧊 **Reference meshes** — GLB/glTF models load as lit, movable layers next to the splats (never exported as splats)
+- 💡 **Light layers** — point, spot, directional and ambient lights as layers (from a NEXUS Verse scene, or `addLightLayer` from the console): a handle you move with the gizmo, lighting the reference meshes only
 - 🧹 **Cleanup shapes** — boxes, spheres, cylinders and cutting planes in **Keep** / **Erase** / **Select** mode, soft-edge falloff, real-time SDF masking
 - 🖌️ **Brushes** — paint directly on the splats to erase or select (wheel = radius)
 - ✂️ **Splat selection ops** — extract (cut), duplicate (copy/paste) or delete the selection; extracted splats become a movable layer
@@ -144,7 +145,7 @@ Requires Node.js 18+.
 
 ### NEXUS Verse link
 
-[NEXUS Verse](https://github.com/NXStorm/nexus-verse) turns a photo into a world with 3D objects; its **↗ Open in NEXUS GS** button opens the chosen layers here — the world and splat layers as editable splats, the objects as reference meshes, the shot camera on the timeline, the view on its first key. Clean, brush, extract, move, then click **→ NEXUS Verse**: every edited splat layer is re-exported in its own frame, and Verse replaces the files, applies the moves, imports extracted selections as new layers, deletes the layers you deleted and takes the camera back. The viewer is launched as
+[NEXUS Verse](https://github.com/NXStorm/nexus-verse) turns a photo into a world with 3D objects; its **↗ Open in NEXUS GS** button opens the chosen layers here — the world and splat layers as editable splats, the objects as reference meshes, its lights as light layers, the shot camera on the timeline, the view on its first key. Clean, brush, extract, move, then click **→ NEXUS Verse**: every edited splat layer is re-exported in its own frame, and Verse replaces the files, applies the moves, imports extracted selections as new layers, deletes the layers you deleted and takes the camera back. The viewer is launched as
 
 ```bash
 "NEXUS GS Viewer.exe" --scene=project.nex.json --verse=return_folder --verse-url=http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return

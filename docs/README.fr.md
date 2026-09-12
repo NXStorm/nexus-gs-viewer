@@ -43,6 +43,7 @@ Les scans Gaussian Splat sortent bruités de l'entraînement — flottants, sol 
 - 🎥 **Aller-retour caméra Nuke** — exporte la caméra animée en `.chan`, ou importe un `.chan` tracké depuis Nuke et rejoue-le sur les splats
 - 🔗 **Lien NEXUS Verse** — un projet Verse s'ouvre ici avec son monde, ses calques splat, ses objets (maillages de référence) et sa caméra ; **→ NEXUS Verse** renvoie les calques édités et Verse se met à jour en place
 - 🧊 **Maillages de référence** — les modèles GLB/glTF se chargent en calques éclairés et déplaçables à côté des splats (jamais exportés en splat)
+- 💡 **Calques lumière** — ponctuelles, spots, directionnelles et ambiante en calques (depuis une scène NEXUS Verse, ou `addLightLayer` dans la console) : une poignée déplaçable au gizmo, qui n'éclaire que les maillages de référence
 - 🧹 **Formes de nettoyage** — boîtes, sphères, cylindres et plans de coupe en mode **Garder** / **Effacer** / **Sélection**, bord doux, masquage SDF temps réel
 - 🖌️ **Pinceaux** — peins directement sur les splats pour effacer ou sélectionner (molette = rayon)
 - ✂️ **Opérations de sélection** — extraire (couper), dupliquer (copier/coller) ou supprimer la sélection ; les splats extraits deviennent un calque déplaçable
@@ -141,7 +142,7 @@ Nécessite Node.js 18+.
 
 ### Lien NEXUS Verse
 
-[NEXUS Verse](https://github.com/NXStorm/nexus-verse) transforme une photo en monde avec des objets 3D ; son bouton **↗ Open in NEXUS GS** ouvre ici les couches choisies — le monde et les calques splat en splats éditables, les objets en maillages de référence, la caméra du plan sur la timeline, la vue sur sa première clé. Nettoie, gomme, extrais, déplace, puis clique **→ NEXUS Verse** : chaque calque splat édité est réexporté dans son propre repère, et Verse remplace les fichiers, applique les déplacements, importe les sélections extraites en nouvelles couches, supprime les calques que vous avez supprimés et reprend la caméra. Le viewer est lancé ainsi :
+[NEXUS Verse](https://github.com/NXStorm/nexus-verse) transforme une photo en monde avec des objets 3D ; son bouton **↗ Open in NEXUS GS** ouvre ici les couches choisies — le monde et les calques splat en splats éditables, les objets en maillages de référence, ses lumières en calques lumière, la caméra du plan sur la timeline, la vue sur sa première clé. Nettoie, gomme, extrais, déplace, puis clique **→ NEXUS Verse** : chaque calque splat édité est réexporté dans son propre repère, et Verse remplace les fichiers, applique les déplacements, importe les sélections extraites en nouvelles couches, supprime les calques que vous avez supprimés et reprend la caméra. Le viewer est lancé ainsi :
 
 ```bash
 "NEXUS GS Viewer.exe" --scene=projet.nex.json --verse=dossier_retour --verse-url=http://127.0.0.1:8741/api/projects/<id>/bridge/gs/return
