@@ -1,5 +1,8 @@
-// Génère build/icon.png (256×256) et build/icon.ico pour PDG GS Viewer.
+// Génère build/icon.png (256×256) et build/icon.ico pour NEXUS GS Viewer.
 // Zéro dépendance : dessin procédural + encodeur PNG minimal (zlib natif).
+// DA famille NEXUS (Verse, Hub, 4D, Gate…) : carré arrondi noir, glyphe blanc.
+// Ici : coins de viseur (trait net) autour d'un trio de splats gaussiens — on
+// cadre des splats, c'est le métier de l'app.
 import { deflateSync } from 'zlib'
 import { mkdirSync, writeFileSync } from 'fs'
 
@@ -21,14 +24,43 @@ function roundedRectAlpha(x, y) {
 const bgTop = [0x0e / 255, 0x0e / 255, 0x0e / 255]
 const bgBot = [0x04 / 255, 0x04 / 255, 0x04 / 255]
 
-// --- Blobs gaussiens monochromes (encre blanche, esprit Prodigious) ---
+// --- Glyphe : trio de splats gaussiens dans des coins de viseur ------------
+// Splats : un cœur blanc et deux satellites, serrés au centre du cadre.
 const blobs = [
-  { x: 148, y: 92, s: 30, c: [1.0, 1.0, 1.0], k: 1.0 },     // cœur blanc
-  { x: 104, y: 138, s: 20, c: [0.75, 0.75, 0.75], k: 0.85 },// satellite clair
-  { x: 172, y: 158, s: 14, c: [0.55, 0.55, 0.55], k: 0.8 }, // petit gris
-  { x: 122, y: 196, s: 10, c: [0.9, 0.9, 0.9], k: 0.7 },    // point vif bas
-  { x: 138, y: 128, s: 46, c: [0.18, 0.18, 0.18], k: 0.8 }  // voile de fumée
+  { x: 140, y: 114, s: 24, c: [1.0, 1.0, 1.0], k: 1.0 },    // cœur blanc
+  { x: 102, y: 152, s: 15, c: [0.7, 0.7, 0.7], k: 0.85 },   // satellite clair
+  { x: 160, y: 160, s: 9, c: [0.88, 0.88, 0.88], k: 0.75 }, // point vif
+  { x: 128, y: 134, s: 42, c: [0.15, 0.15, 0.15], k: 0.8 }  // voile de fumée
 ]
+
+// Coins de viseur : quatre équerres au trait net (langage « Gate »).
+const M = 50 // marge du cadre
+const L = 33 // longueur des bras
+const W = 9  // épaisseur du trait
+const INK = 0.94
+const bars = []
+for (const [cx, cy] of [
+  [M, M],
+  [S - M, M],
+  [M, S - M],
+  [S - M, S - M]
+]) {
+  const sx = cx === M ? 1 : -1 // direction vers l'intérieur
+  const sy = cy === M ? 1 : -1
+  // bras horizontal puis vertical, en rectangles [x0,x1]×[y0,y1]
+  bars.push([Math.min(cx, cx + sx * L), Math.max(cx, cx + sx * L), Math.min(cy, cy + sy * W), Math.max(cy, cy + sy * W)])
+  bars.push([Math.min(cx, cx + sx * W), Math.max(cx, cx + sx * W), Math.min(cy, cy + sy * L), Math.max(cy, cy + sy * L)])
+}
+// Couverture d'un rectangle avec bord adouci ~1px.
+function barCoverage(x, y) {
+  let cov = 0
+  for (const [x0, x1, y0, y1] of bars) {
+    const cx2 = Math.min(Math.max(Math.min(x - x0, x1 - x) + 0.5, 0), 1)
+    const cy2 = Math.min(Math.max(Math.min(y - y0, y1 - y) + 0.5, 0), 1)
+    cov = Math.max(cov, cx2 * cy2)
+  }
+  return cov
+}
 
 for (let y = 0; y < S; y++) {
   const t = y / S
@@ -38,6 +70,14 @@ for (let y = 0; y < S; y++) {
     let r = bgTop[0] * (1 - t) + bgBot[0] * t
     let g = bgTop[1] * (1 - t) + bgBot[1] * t
     let b = bgTop[2] * (1 - t) + bgBot[2] * t
+    // Coins de viseur (mélange opaque, trait net)
+    const cov = barCoverage(x, y)
+    if (cov > 0) {
+      r = r * (1 - cov) + INK * cov
+      g = g * (1 - cov) + INK * cov
+      b = b * (1 - cov) + INK * cov
+    }
+    // Splats gaussiens (encre additive)
     for (const bl of blobs) {
       const d2 = (x - bl.x) ** 2 + (y - bl.y) ** 2
       const e = Math.exp(-d2 / (2 * bl.s * bl.s)) * bl.k
