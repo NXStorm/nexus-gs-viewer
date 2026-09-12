@@ -200,6 +200,7 @@ Publié sous [licence MIT](../LICENSE). Libre d'utilisation, de modification et 
 - [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) — une photo → un décor Gaussian splat navigable (monde Marble ou relevé RGBD local), ses objets en couches 3D, des lumières, un mouvement de caméra, un MP4, puis un re-rendu IA (Kling, Seedance, Wan VACE) et un upscale. Lié dans les deux sens avec ce viewer.
 - [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — le nœud Nuke de l'aller-retour.
 - [**NEXUS 4D Viewer**](https://github.com/NXStorm/nexus-4d-viewer) — le viewer frère pour les scènes dynamiques (4DGS) (privé pour l’instant).
+- [**NEXUS Hub**](https://github.com/NXStorm/nexus-hub) — tous les projets de la famille dans une fenêtre (cartes, historique, poids, coût), ouverture dans le bon outil — ce viewer compris (privé pour l’instant).
 
 ## Crédits
 

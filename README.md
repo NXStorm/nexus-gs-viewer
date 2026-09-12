@@ -232,6 +232,7 @@ Released under the [MIT License](LICENSE). Free to use, modify, and ship in comm
 - [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) — one photo → a navigable Gaussian-splat set (Marble world or local RGBD lift), its objects as 3D layers, lights, a camera move, an MP4, then an AI re-render (Kling, Seedance, Wan VACE) and an upscale. Linked both ways with this viewer.
 - [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — the Nuke node for the round-trip.
 - [**NEXUS 4D Viewer**](https://github.com/NXStorm/nexus-4d-viewer) — the sibling viewer for dynamic (4DGS) scenes (private for now).
+- [**NEXUS Hub**](https://github.com/NXStorm/nexus-hub) — every project of the family in one window (cards, history, weight, cost), opening each in the right tool — this viewer included (private for now).
 
 ## Credits
 
