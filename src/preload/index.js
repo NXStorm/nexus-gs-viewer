@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 // Surface minimale et sûre exposée au renderer.
 contextBridge.exposeInMainWorld('api', {
+  noSound: process.argv.includes('--no-sound'),
   pickFile: (opts) => ipcRenderer.invoke('dialog:pickFile', opts),
   readFile: (filePath) => ipcRenderer.invoke('file:read', filePath),
   readText: (filePath) => ipcRenderer.invoke('file:readText', filePath),

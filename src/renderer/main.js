@@ -13,6 +13,7 @@ import {
   SplatEditRgbaBlendMode
 } from '@sparkjsdev/spark'
 import { Muxer, StreamTarget } from 'mp4-muxer'
+import { playNexusChime } from './chime.js'
 
 // ---------------------------------------------------------------------------
 // Scène Three.js + moteur Spark
@@ -4256,3 +4257,7 @@ window.addEventListener('resize', () => {
 // Langue : applique la langue mémorisée (anglais par défaut) au démarrage.
 // ---------------------------------------------------------------------------
 applyLanguage()
+
+// The NEXUS family's startup chime — not for headless renders and tests (--no-sound from the main process);
+// localStorage nex-chime=0 mutes it for good.
+if (!window.api.noSound && localStorage.getItem('nex-chime') !== '0') setTimeout(playNexusChime, 300)

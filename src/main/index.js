@@ -372,6 +372,8 @@ function createWindow() {
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      // Headless renders, tests and SPLAT_SILENT=1: no startup chime
+      additionalArguments: process.env['SPLAT_SILENT'] || cliRenderOpts(process.argv) || Object.keys(process.env).some((k) => k.startsWith('SPLAT_TEST') || k === 'SPLAT_SHOT' || k === 'SPLAT_RECORD') ? ['--no-sound'] : [],
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
