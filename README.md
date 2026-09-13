@@ -224,6 +224,8 @@ Have an idea? Open an issue or ping me on [LinkedIn](https://www.linkedin.com/in
 
 PRs and issues welcome. If you clean up or previz a shot with NEXUS GS Viewer, I'd love to see it — tag me on [LinkedIn](https://www.linkedin.com/in/patrick-crucke/).
 
+Before touching the code, read [docs/PITFALLS.md](docs/PITFALLS.md) — the traps met building and running the viewer (background throttling, argv relays, the Nuke conventions, packaging).
+
 ## License
 
 Released under the [MIT License](LICENSE). Free to use, modify, and ship in commercial work.
