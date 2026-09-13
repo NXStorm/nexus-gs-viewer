@@ -135,7 +135,7 @@ Requires Node.js 18+.
 4. With a selection: **Extract** (cut to a new layer), **Duplicate** (copy to a new layer) or **Delete** — the new layer moves with the gizmo
 5. **Apply edits** bakes everything destructively (undoable) so you can iterate; **Export** writes the cleaned `.spz`/`.ply`
 
-> 🔌 **Working in Nuke?** Install [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — a NEXUS Edit node that opens your splat in the viewer and imports the cleaned result back as a GeoImport, one click each way.
+> 🔌 **Working in Nuke?** Install [**NEXUS Splats for Nuke**](https://github.com/NXStorm/nexus-splats-nuke) — a NEXUS Edit node that opens your splat in the viewer and imports the cleaned result back as a GeoImport, one click each way.
 
 > 🔗 **Building worlds from a photo?** [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) (photo → Marble world + SAM 3D objects → camera → AI render) opens its set, objects and camera here with one button, and the **→ NEXUS Verse** button sends the cleaned layers back — see [NEXUS Verse link](#nexus-verse-link). The studio is a private repository for now.
 
@@ -233,7 +233,7 @@ Released under the [MIT License](LICENSE). Free to use, modify, and ship in comm
 ## The NEXUS family
 
 - [**NEXUS Verse**](https://github.com/NXStorm/nexus-verse) — one photo → a navigable Gaussian-splat set (Marble world or local RGBD lift), its objects as 3D layers, lights, a camera move, an MP4, then an AI re-render (Kling, Seedance, Wan VACE) and an upscale. Linked both ways with this viewer.
-- [**Nexus-x-Nuke**](https://github.com/NXStorm/Nexus-x-Nuke) — the Nuke node for the round-trip.
+- [**NEXUS Splats for Nuke**](https://github.com/NXStorm/nexus-splats-nuke) — the Nuke node for the round-trip.
 - [**NEXUS 4D Viewer**](https://github.com/NXStorm/nexus-4d-viewer) — the sibling viewer for dynamic (4DGS) scenes (private for now).
 - [**NEXUS Hub**](https://github.com/NXStorm/nexus-hub) — every project of the family in one window (cards, history, weight, cost), opening each in the right tool — this viewer included (private for now).
 
